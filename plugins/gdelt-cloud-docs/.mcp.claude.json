@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "gdelt-docs": {
+      "type": "http",
+      "url": "https://docs.gdeltcloud.com/mcp"
+    }
+  }
+}

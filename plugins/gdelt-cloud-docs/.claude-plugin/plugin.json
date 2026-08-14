@@ -1,0 +1,11 @@
+{
+  "name": "gdelt-cloud-docs",
+  "displayName": "GDELT Cloud Docs",
+  "description": "Lets your agent read the GDELT Cloud API reference, parameter and value lists, and the OpenAPI spec while it writes your code. No account needed.",
+  "author": { "name": "GDELT Cloud", "email": "hello@gdeltcloud.com", "url": "https://gdeltcloud.com" },
+  "homepage": "https://docs.gdeltcloud.com",
+  "repository": "https://github.com/gdelt-cloud/plugins",
+  "license": "MIT",
+  "keywords": ["docs", "openapi", "reference"],
+  "mcpServers": "./.mcp.claude.json"
+}

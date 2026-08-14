@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "gdelt-cloud": {
+      "type": "http",
+      "url": "https://gdelt-cloud-mcp.fastmcp.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${user_config.gdelt_api_key}"
+      }
+    },
+    "gdelt-docs": {
+      "type": "http",
+      "url": "https://docs.gdeltcloud.com/mcp"
+    }
+  }
+}

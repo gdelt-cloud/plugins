@@ -1,0 +1,31 @@
+{
+  "name": "gdelt-cloud",
+  "version": "0.1.0",
+  "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure — plus five workflow skills for geopolitical, financial and supply-chain risk.",
+  "author": {
+    "name": "GDELT Cloud",
+    "email": "hello@gdeltcloud.com",
+    "url": "https://gdeltcloud.com"
+  },
+  "homepage": "https://gdeltcloud.com/build",
+  "repository": "https://github.com/gdelt-cloud/plugins",
+  "license": "MIT",
+  "keywords": ["geopolitics", "risk", "events", "news", "supply-chain", "osint"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.codex.json",
+  "interface": {
+    "displayName": "GDELT Cloud",
+    "shortDescription": "A clean event database over the world's news.",
+    "longDescription": "Structured events coded from global news into a CAMEO+ / ACLED-aligned taxonomy, deduplicated story clusters with their source articles, Wikipedia-linked entities resolved across news, SEC filings, sanctions lists and energy registries, and the physical assets underneath. Five skills scaffold complete monitoring workflows for war-risk underwriting, counterparty exposure, supplier disruption and country risk.",
+    "developerName": "GDELT Cloud",
+    "category": "Productivity",
+    "capabilities": ["Read"],
+    "websiteURL": "https://gdeltcloud.com",
+    "privacyPolicyURL": "https://gdeltcloud.com/privacy",
+    "termsOfServiceURL": "https://gdeltcloud.com/terms",
+    "defaultPrompt": [
+      "Build me a daily watchboard for political violence near these five sites",
+      "Resolve this company and show its assets, filings and news exposure"
+    ]
+  }
+}

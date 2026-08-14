@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "gdelt-cloud",
+  "description": "GDELT Cloud — a clean event database over the world's news, for coding agents.",
+  "owner": {
+    "name": "GDELT Cloud",
+    "email": "hello@gdeltcloud.com",
+    "url": "https://gdeltcloud.com"
+  },
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "gdelt-cloud",
+      "source": "gdelt-cloud",
+      "description": "Coded global events, clustered news stories, resolved entities, energy and industrial assets, SEC filings and government exposure — over MCP, with five workflow skills for geopolitical, financial and supply-chain risk. Needs a free API key.",
+      "category": "Data",
+      "keywords": ["geopolitics", "risk", "events", "news", "supply-chain", "osint", "energy", "sanctions"],
+      "author": { "name": "GDELT Cloud", "url": "https://gdeltcloud.com" },
+      "homepage": "https://gdeltcloud.com/build",
+      "license": "MIT"
+    },
+    {
+      "name": "gdelt-cloud-docs",
+      "source": "gdelt-cloud-docs",
+      "description": "Documentation only, no account needed. Lets your agent read the GDELT Cloud API reference, parameter and value lists, and the OpenAPI spec while it writes your code.",
+      "category": "Documentation",
+      "keywords": ["docs", "openapi", "reference"],
+      "author": { "name": "GDELT Cloud", "url": "https://gdeltcloud.com" },
+      "homepage": "https://docs.gdeltcloud.com",
+      "license": "MIT"
+    }
+  ]
+}

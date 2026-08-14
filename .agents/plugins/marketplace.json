@@ -1,0 +1,32 @@
+{
+  "name": "gdelt-cloud",
+  "interface": {
+    "displayName": "GDELT Cloud"
+  },
+  "plugins": [
+    {
+      "name": "gdelt-cloud",
+      "source": {
+        "source": "local",
+        "path": "./plugins/gdelt-cloud"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "gdelt-cloud-docs",
+      "source": {
+        "source": "local",
+        "path": "./plugins/gdelt-cloud-docs"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "NONE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
