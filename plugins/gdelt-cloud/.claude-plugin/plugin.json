@@ -7,7 +7,7 @@
     "email": "hello@gdeltcloud.com",
     "url": "https://gdeltcloud.com"
   },
-  "homepage": "https://gdeltcloud.com/build",
+  "homepage": "https://gdeltcloud.com",
   "repository": "https://github.com/gdelt-cloud/plugins",
   "license": "MIT",
   "keywords": ["geopolitics", "risk", "events", "news", "supply-chain", "osint", "energy", "sanctions"],

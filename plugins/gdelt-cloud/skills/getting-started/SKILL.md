@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-getting-started
-description: Use this skill whenever you are about to call the GDELT Cloud API for the first time in a project, or when the user asks to build anything on GDELT Cloud events, stories or entities. It carries the conventions that decide whether a call is correct — identifier spaces, geographic filters, date windows, the summary/list gap — because getting these wrong returns HTTP 200 with the wrong data rather than an error.
+description: Use this skill whenever the user mentions GDELT Cloud at all — before the first API call in a project, and whenever they describe anything they want to build, monitor, chart, count or answer using events, stories, summaries, entities, facilities, tone or share of voice. It carries the orientation and the conventions that decide whether a call is correct, because almost every filter that is wrong in an interesting way returns HTTP 200 with the wrong data rather than an error. Pair it with gdelt-cloud-core-api, which maps the ask onto an endpoint.
 ---
 
 # Building on GDELT Cloud — read this before your first call

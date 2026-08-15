@@ -18,7 +18,7 @@
       "category": "Data",
       "keywords": ["geopolitics", "risk", "events", "news", "supply-chain", "osint", "energy", "sanctions"],
       "author": { "name": "GDELT Cloud", "url": "https://gdeltcloud.com" },
-      "homepage": "https://gdeltcloud.com/build",
+      "homepage": "https://gdeltcloud.com",
       "license": "MIT"
     },
     {

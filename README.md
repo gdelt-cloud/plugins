@@ -97,3 +97,12 @@ Issues and questions: <hello@gdeltcloud.com>
 
 MIT licensed. The data carries its own per-dataset licences, published at
 <https://docs.gdeltcloud.com/data/catalog>.
+
+## Why the Claude manifests carry no `version`
+
+Deliberate, and not an oversight to tidy up. The Codex manifests carry `version` because the Codex
+spec requires it. Claude Code treats it as optional metadata, and a plugin with a pinned version can
+be served from cache until that number changes — which means a docs or skill fix silently does not
+reach anyone who already installed. Omitting it makes every install fetch the current contents.
+
+If you add one, you own bumping it on every change, including one-line skill edits.
