@@ -60,9 +60,11 @@ compliance control** — say so in the output, every time.
 
 ## Counting, and why you cannot
 
-There is no `total` on any list response — pagination is `{limit, cursor, next_cursor}`. And
-`/events/summary` drops `country_match`, `geo_precision_*` and `entity`, so it cannot give you the
-count of the population your list describes. Consequences you must build around:
+There is no `total` on any list response — pagination is `{limit, cursor, next_cursor}`.
+`/events/summary` DOES take `country_match`, `geo_precision_max` and `entity`, so it can give you
+the count of the population your list describes — but confirm that by comparing `applied_filters`
+on both responses rather than assuming it, and note it takes no `search`. Consequences you must
+still build around:
 
 - Report "at least N" and whether you stopped early, never a bare count.
 - An escalation threshold above one page size can never fire unless you paginate to exhaustion.

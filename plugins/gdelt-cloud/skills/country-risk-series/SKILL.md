@@ -45,7 +45,7 @@ floor on most days. Treat a wide panel as a modelling choice you have to defend,
    the series will flatten exactly the regime change you are trying to detect.
 3. **`variant` and `construction` change what you are measuring.** The two GPR lenses and the
    own-coverage vs world-corpus constructions are different series, not settings. Pick one per panel
-   and put it in the column name. Ask the docs MCP for the current accepted values rather than
+   and put it in the column name. Ask the `gdelt-cloud-docs` MCP for the current accepted values rather than
    hardcoding them — the 400 carries `details.accepted_values`.
 4. **Never correlate two `*_share` columns.** They are compositional; a share series and another
    share series over the same denominator are mechanically related.

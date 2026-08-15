@@ -36,9 +36,11 @@ GET /api/v2/events/summary?bbox=…&date_start=…&date_end=…&group_by=date
 GET /api/v2/events/summary?bbox=…&date_start=…&date_end=…&group_by=subcategory
 ```
 
-`/events/summary` has no `country_match`, no `geo_precision_*` and no `entity`. So it is a shape,
-not a number you can reconcile against your filtered list. Say that in the output rather than
-presenting the two side by side as though they agreed.
+`/events/summary` takes `country_match`, `geo_precision_max` and `entity`, so it CAN be reconciled
+against your filtered list — but only if you send the same filters to both and verify that by
+diffing `applied_filters` on the two responses. It takes no `search`, so a semantic-search list has
+no summary twin. Where the two cannot be made to agree, say so in the output rather than presenting
+them side by side as though they did.
 
 ### 3. Pull the incidents
 
@@ -52,7 +54,7 @@ GET /api/v2/events
   &limit=100
 ```
 
-Ask the docs MCP for the conflict categories rather than hardcoding them — the taxonomy is published
+Ask the `gdelt-cloud-docs` MCP for the conflict categories rather than hardcoding them — the taxonomy is published
 at `/reference/codes-conflict` and each code carries what it covers and what it explicitly does not.
 The one most people miss on a maritime brief: interception and interdiction — a drone shot down, a
 missile intercepted, a cache seized — is its own code, and it is most of the volume in a contested

@@ -22,7 +22,7 @@ sanctions lists, China development finance — deduplicated to one row per real-
 the canonical spine `e_…` id, with a per-source breakdown.
 
 Keep the whole row, not just the id. It carries the `identifiers` map, which is how you cross into
-the other id spaces. **Ask the docs MCP for the exact key names before you index into it** — they
+the other id spaces. **Ask the `gdelt-cloud-docs` MCP for the exact key names before you index into it** — they
 are not guessable, and a `KeyError` is better than a silent miss.
 
 Then assert once, loudly, and stop if it fails:

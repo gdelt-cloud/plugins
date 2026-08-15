@@ -5,13 +5,48 @@ description: Use this skill whenever you are about to call the GDELT Cloud API f
 
 # Building on GDELT Cloud — read this before your first call
 
-GDELT Cloud is a clean event database over the world's news. It is not raw GDELT: events are
-coded in-house from clustered news stories into a CAMEO+ / ACLED-aligned taxonomy, entities are
-resolved to one spine across news, filings, sanctions lists and asset registries, and every number
-is traceable to the articles behind it.
+GDELT Cloud is a clean event database over the world's news. It is **not** raw GDELT — we ingest
+the public GDELT article stream as one input and never their coded output. Events are coded here,
+from clustered news stories, into a CAMEO+ / ACLED-aligned taxonomy; entities are resolved to one
+identity spine across news, SEC filings, sanctions lists and asset registries; and every number
+traces back to the articles behind it.
+
+## Orient yourself first — six nouns and one spine
+
+Everything in the API is built from six nouns, and they compose in one direction:
+
+**Article → Story → Event**, with **Entity**, **Facility** and **Metric** hanging off them.
+
+- **Article** — one news item from one publisher. Evidence, not a claim.
+- **Story** — a cluster of articles covering the same development. Deduplicated by embedding
+  retrieval plus an LLM that adjudicates every candidate pair.
+- **Event** — one discrete coded thing that happened or was said, with a date, a place, actors and
+  metrics. One Story can yield several Events. This is the claim we stand behind.
+- **Entity** — a resolved person, organization or place, stable across sources.
+- **Facility** — a physical asset: plant, mine, port, pipeline, data centre.
+- **Metric** — a number scored onto an Event by a published rubric.
+
+**Two surfaces.** The **Core API** is events, stories and entities — the coded news layer described
+above. The **Open Feeds** are independent public datasets loaded on the same identity spine so you
+can join them to the news: SEC filings, US federal awards and FARA, sanctions and debarment
+screening lists, energy and heavy-industry asset registries, vessel positions, FRED macro series,
+AI compute. The join key is the entity id, which is why rule 1 below matters more than any other.
+
+**Freshness.** The pipeline is continuous, not a nightly batch: articles are ingested, clustered and
+coded **hourly**, and the daily snapshots the API reads are rebuilt **every 30 minutes**. Today's
+numbers are still moving — end a window yesterday if you need day-over-day stability. Every
+`/api/v2/events` response carries `meta.settled_at`, so you never have to guess how fresh a number
+is. Cadence per layer: `/concepts#how-fresh-is-it`.
+
+**Where the values live.** Never hardcode a value list from an example. Every vocabulary the API
+validates against is published at `/reference/enums`, and each is labelled **closed** (fixed — safe
+to switch on), **observed** (what the corpus currently holds — never exhaustive) or **identifier**
+(discovered through a call, never enumerated). Treating an observed list as closed is the most
+common way to build a filter that silently misses data. The map of which reference page answers
+which question is at `/reference/index`.
 
 **The whole risk in this API is the confident wrong answer.** Almost every filter that is wrong in
-an interesting way returns `200` with a plausible-looking result set. Nine rules below prevent that.
+an interesting way returns `200` with a plausible-looking result set. Ten rules below prevent that.
 Follow them and your first build will be correct; skip them and it will look correct.
 
 ## Setup
@@ -22,8 +57,8 @@ Auth       Authorization: Bearer gdelt_sk_...
 Keys       https://gdeltcloud.com/api-keys   (free plan reads every dataset)
 ```
 
-Two MCP servers are wired by this plugin. `gdelt-cloud` is the data; `gdelt-docs` is the
-documentation. When you need a parameter, a value list, or a response shape, **ask `gdelt-docs`
+Two MCP servers are wired by this plugin. `gdelt-cloud` is the data; `gdelt-cloud-docs` is the
+documentation. When you need a parameter, a value list, or a response shape, **ask `gdelt-cloud-docs`
 rather than guessing** — its `query_docs_filesystem_gdelt_cloud` tool can slice the OpenAPI spec
 directly, which is far cheaper and more exact than a prose search:
 
@@ -31,7 +66,7 @@ directly, which is far cheaper and more exact than a prose search:
 jq '.paths."/api/v2/events".get.parameters[] | {name, description}' openapi-v2.json
 ```
 
-## The nine rules
+## The ten rules
 
 **1. Resolve an entity once, then reuse the id.**
 `GET /api/v2/search?q=<name>&universe=all` is the resolver the rest of the API assumes you called.
@@ -46,12 +81,13 @@ alone. `/gov/awards` also takes `cik:` and rejects bare names. `/exposure` also 
 spelling for a spine alias. Check the identifier table in
 `/reference/parameters#identifier-parameters` before chaining two endpoints.
 
-**3. A `/summary` endpoint is not a rollup of its list sibling.**
-Count before you list — but `/events/summary` accepts neither `days` nor `date`, and also drops
-`entity`, `country_match`, `geo_precision_*`, `near`, `search`, `sort` and `cursor`. It takes
-`date_start` / `date_end`. An unknown parameter lands in `applied_filters.ignored` rather than
-400ing, so a summary and a list can describe different populations while both return 200. The full
-per-endpoint gap is at `/reference/endpoints#summary-endpoints-take-fewer-parameters`.
+**3. A `/summary` endpoint is close to its list sibling, but not identical.**
+Count before you list. `/events/summary` takes 41 of the list's 50 parameters — including `days`,
+`date`, `date_start`/`date_end`, `entity`, `country_match` and `geo_precision_max`. What it does not
+take is `search`, `sort` and `cursor`, which are list concerns. An unknown parameter lands in
+`applied_filters.ignored` rather than 400ing, so a summary and a list CAN describe different
+populations while both return 200 — compare `applied_filters` on both, and check the current gap at
+`/reference/endpoints` rather than trusting this paragraph, which is a snapshot.
 
 **4. `bbox` axis order differs by family.**
 Events, stories, facilities and energy take **latitude first** (`lat_min,lon_min,lat_max,lon_max`).
@@ -79,6 +115,16 @@ from it was not applied. This is the fastest way to catch rules 2, 3 and 5 going
 **9. Bound every query by date, and know where history starts.**
 Windows are capped (30 days on most endpoints) and consistently coded history begins **March 2026**.
 Earlier dates return a near-empty result that reads like a bug and is not.
+
+**10. `count()` over events is not an incident count — read `incident`.**
+`event_id` identifies a CODED STORY. One real-world incident covered by two story clusters is coded
+twice, so counting rows over-counts incidents and summing `fatalities` double-counts the dead. Every
+event card carries an `incident` block: group or count on `incident.uid` instead of the event id.
+**Always read `incident.resolution` before trusting it** — `llm` means a judge confirmed a duplicate
+and `uid` names the survivor; `self` means a judge looked and found none; `unadjudicated` means
+nothing ever compared this event to anything and `uid` is a fallback, not a verdict. `unadjudicated`
+is the honest majority: only events that were candidates for a duplicate are ever adjudicated.
+Nothing is deleted either way — the duplicate keeps its own id and stays retrievable.
 
 ## The shape of a first build
 
@@ -125,6 +171,6 @@ opposite responses — back off and retry versus stop and tell the user. The ful
 
 ## When you are stuck
 
-Ask the `gdelt-docs` MCP server. If the docs are wrong or missing something, its `submit_feedback`
+Ask the `gdelt-cloud-docs` MCP server. If the docs are wrong or missing something, its `submit_feedback`
 tool reaches a human. Do not guess a parameter name — the server rejects unknown filters into
 `applied_filters.ignored`, and a guess becomes a silent wrong answer rather than an error.
