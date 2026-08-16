@@ -112,6 +112,19 @@ def main() -> int:
                 errs.append(f"codex source does not resolve: {p}")
             elif not (ROOT / p / '.codex-plugin' / 'plugin.json').exists():
                 errs.append(f"{p}: no .codex-plugin/plugin.json")
+            # ★ THE POLICY ENUMS ARE CLOSED, AND A BAD VALUE KILLS THE WHOLE MARKETPLACE. Not the
+            # one entry — `codex plugin marketplace add` refuses to parse the FILE:
+            #   unknown variant `NONE`, expected `ON_INSTALL` or `ON_USE`
+            # so one wrong string on the docs plugin made both plugins uninstallable. "NONE" is not
+            # a quieter way of saying no auth; the encoding for no auth is the ABSENCE of the key.
+            pol = entry.get('policy', {})
+            auth = pol.get('authentication')
+            if auth is not None and auth not in ('ON_INSTALL', 'ON_USE'):
+                errs.append(f"{p}: policy.authentication={auth!r} — only ON_INSTALL or ON_USE are "
+                            f"valid; omit the key entirely for a server that needs no auth")
+            inst = pol.get('installation')
+            if inst is not None and inst not in ('AVAILABLE', 'REQUIRED', 'BLOCKED'):
+                errs.append(f"{p}: policy.installation={inst!r} is not a value codex accepts")
 
     # ★ CURSOR IS THE THIRD CLIENT AND WAS INVISIBLE HERE. Adding `.cursor-plugin/` without adding
     # it to this loop left the validator reporting "0 errors" while never opening the new files —

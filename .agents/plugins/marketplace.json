@@ -23,8 +23,7 @@
         "path": "./plugins/gdelt-cloud-docs"
       },
       "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "NONE"
+        "installation": "AVAILABLE"
       },
       "category": "Productivity"
     }
