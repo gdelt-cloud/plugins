@@ -1,0 +1,38 @@
+{
+  "name": "gdelt-cloud",
+  "version": "0.1.0",
+  "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure \u2014 plus six skills covering the Core API and four risk workflows.",
+  "author": {
+    "name": "GDELT Cloud",
+    "email": "hello@gdeltcloud.com"
+  },
+  "homepage": "https://gdeltcloud.com",
+  "repository": "https://github.com/gdelt-cloud/plugins",
+  "license": "MIT",
+  "keywords": [
+    "geopolitics",
+    "risk",
+    "events",
+    "news",
+    "supply-chain",
+    "osint",
+    "energy",
+    "sanctions"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.cursor.json",
+  "variables": {
+    "type": "object",
+    "required": [
+      "GDELT_API_KEY"
+    ],
+    "properties": {
+      "GDELT_API_KEY": {
+        "type": "string",
+        "title": "GDELT Cloud API key",
+        "description": "Starts with gdelt_sk_. Create one free at https://gdeltcloud.com/api-keys \u2014 the free plan can read every dataset.",
+        "format": "password"
+      }
+    }
+  }
+}

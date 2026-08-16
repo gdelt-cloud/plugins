@@ -113,6 +113,32 @@ def main() -> int:
             elif not (ROOT / p / '.codex-plugin' / 'plugin.json').exists():
                 errs.append(f"{p}: no .codex-plugin/plugin.json")
 
+    # ★ CURSOR IS THE THIRD CLIENT AND WAS INVISIBLE HERE. Adding `.cursor-plugin/` without adding
+    # it to this loop left the validator reporting "0 errors" while never opening the new files —
+    # a green that means "not checked", which is worse than a red. Same shape as the two above.
+    cur = load('.cursor-plugin/marketplace.json')
+    if cur:
+        for entry in cur.get('plugins', []):
+            p = pathlib.Path(entry['source'])
+            if not (ROOT / p).is_dir():
+                errs.append(f"cursor source does not resolve: {p}")
+                continue
+            man = load(p / '.cursor-plugin' / 'plugin.json')
+            if not man:
+                errs.append(f"{p}: no .cursor-plugin/plugin.json")
+                continue
+            if man.get('name') != entry['name']:
+                errs.append(f"{p}: cursor manifest name {man.get('name')!r} != marketplace {entry['name']!r}")
+            # `mcpServers` may be a path; when it is, the file has to exist or the servers are silent.
+            mcp = man.get('mcpServers')
+            if isinstance(mcp, str) and not (ROOT / p / mcp).exists():
+                errs.append(f"{p}: cursor mcpServers points at {mcp}, which does not exist")
+            # Skills are the same SKILL.md convention as the other two clients — so a manifest that
+            # claims them while the directory is absent ships a plugin that triggers on nothing.
+            sk = man.get('skills')
+            if isinstance(sk, str) and not (ROOT / p / sk).is_dir():
+                errs.append(f"{p}: cursor skills points at {sk}, which is not a directory")
+
     for e in errs:
         print(f"ERROR: {e}")
     print(f"\n{len(errs)} error(s)")

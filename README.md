@@ -98,6 +98,18 @@ Issues and questions: <hello@gdeltcloud.com>
 MIT licensed. The data carries its own per-dataset licences, published at
 <https://docs.gdeltcloud.com/data/catalog>.
 
+## Cursor
+
+Cursor reads `.cursor-plugin/plugin.json` and a `.cursor-plugin/marketplace.json` at the repository
+root. Its skills convention is the SAME as Claude Code's and Codex's — a `skills/` directory of
+subdirectories each holding a `SKILL.md` — so all six skills are shared across the three clients
+with no duplication. Only the manifests and the MCP config differ.
+
+Two differences worth knowing: Cursor declares user-supplied values through a JSON Schema under
+`variables` (Claude Code uses `userConfig`, Codex uses `bearer_token_env_var`), and it interpolates
+them as `${GDELT_API_KEY}`. Installation is through the Cursor dashboard under **Plugins** rather
+than a CLI command.
+
 ## Why the Claude manifests carry no `version`
 
 Deliberate, and not an oversight to tidy up. The Codex manifests carry `version` because the Codex
