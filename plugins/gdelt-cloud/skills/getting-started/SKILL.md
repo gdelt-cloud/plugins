@@ -117,9 +117,12 @@ Windows are capped (30 days on most endpoints) and consistently coded history be
 Earlier dates return a near-empty result that reads like a bug and is not.
 
 **10. `count()` over events is not an incident count — read `incident`.**
-`event_id` identifies a CODED STORY. One real-world incident covered by two story clusters is coded
-twice, so counting rows over-counts incidents and summing `fatalities` double-counts the dead. Every
-event card carries an `incident` block: group or count on `incident.uid` instead of the event id.
+An event's `id` identifies a CODED STORY. One real-world incident covered by two story clusters is
+coded twice, so counting rows over-counts incidents and summing `fatalities` double-counts the dead.
+Every event card carries an `incident` block: group or count on `incident.uid` instead of `id`.
+Adjudication is partial by design — roughly 7% of events on a typical day — so pass
+`incident_resolution=llm,self` when you need the subset where `incident.uid` is a trustworthy
+grouping key.
 **Always read `incident.resolution` before trusting it** — `llm` means a judge confirmed a duplicate
 and `uid` names the survivor; `self` means a judge looked and found none; `unadjudicated` means
 nothing ever compared this event to anything and `uid` is a fallback, not a verdict. `unadjudicated`
@@ -158,8 +161,10 @@ with httpx.Client(timeout=60, headers=H) as c:
     assert "country_match" in events["applied_filters"], events["applied_filters"]
 
     # 3. Every event carries its evidence.
+    #    The card's key is `id`. `event_id` is the PATH-parameter name in the docs, not a field —
+    #    reading e["event_id"] raises KeyError.
     for e in events["data"][:5]:
-        stories = c.get(f"{BASE}/events/{e['event_id']}/stories").json()
+        stories = c.get(f"{BASE}/events/{e['id']}/stories").json()
         print(e["event_date"], e["category"], e["title"], "→", len(stories["data"]), "stories")
 ```
 

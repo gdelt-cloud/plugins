@@ -14,7 +14,7 @@
     {
       "name": "gdelt-cloud",
       "source": "gdelt-cloud",
-      "description": "Coded global events, clustered news stories, resolved entities, energy and industrial assets, SEC filings and government exposure — over MCP, with five workflow skills for geopolitical, financial and supply-chain risk. Needs a free API key.",
+      "description": "Coded global events, clustered news stories, resolved entities, energy and industrial assets, SEC filings and government exposure — over MCP, with seven skills for building on it and for geopolitical, financial and supply-chain risk. Needs a free API key.",
       "category": "Data",
       "keywords": ["geopolitics", "risk", "events", "news", "supply-chain", "osint", "energy", "sanctions"],
       "author": { "name": "GDELT Cloud", "url": "https://gdeltcloud.com" },

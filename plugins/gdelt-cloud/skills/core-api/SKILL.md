@@ -105,8 +105,9 @@ accepted list attached, not a confident `0%`.
    maritime. Both orders are usually numerically valid, so a swap cannot error.
 4. **Unbounded `geo_precision`** — precision `3` is a country centroid, which falls inside almost any
    box you draw. Pass `geo_precision_max=2` for site-level questions.
-5. **Counting rows as incidents** — `event_id` identifies a coded *story*. Group on `incident.uid`
-   and read `incident.resolution` before trusting it.
+5. **Counting rows as incidents** — an event's `id` identifies a coded *story*. Group on
+   `incident.uid`, read `incident.resolution` before trusting it, and pass
+   `incident_resolution=llm,self` to get only the rows where that grouping is adjudicated.
 
 Read `applied_filters` on every response. It echoes what the server actually used; a filter missing
 from it was not applied. That one habit catches all five.

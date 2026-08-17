@@ -55,13 +55,52 @@ Two servers, both Streamable HTTP:
 
 Both are JSON-RPC endpoints. Opening either in a browser returns `405` — that is expected.
 
+### By hand, without the plugin system
+
+If the marketplace is unavailable or you want the skills in a project without installing a plugin,
+wire it yourself. Three steps:
+
+```bash
+# 1. skills — plain directories, each holding a SKILL.md
+git clone https://github.com/gdelt-cloud/plugins /tmp/gdelt-cloud-plugins
+mkdir -p .claude/skills && cp -R /tmp/gdelt-cloud-plugins/plugins/gdelt-cloud/skills/* .claude/skills/
+
+# 2. key
+export GDELT_API_KEY=gdelt_sk_...
+```
+
+3. a project `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "gdelt-cloud": {
+      "type": "http",
+      "url": "https://gdelt-cloud-mcp.fastmcp.app/mcp",
+      "headers": { "Authorization": "Bearer ${GDELT_API_KEY}" }
+    },
+    "gdelt-cloud-docs": { "type": "http", "url": "https://docs.gdeltcloud.com/mcp" }
+  }
+}
+```
+
+**Use `${GDELT_API_KEY}`, not `${user_config.gdelt_api_key}`.** The `user_config` form is resolved by
+the plugin system and by nothing else — in a hand-written `.mcp.json` it is passed through as a
+literal string and the server answers with an authentication error that says nothing about the real
+cause.
+
+**Restart the session after adding an MCP server.** Servers are connected at startup; until you
+restart, the tools are simply absent, which reads as a broken install.
+
 ## What you get
 
-**`gdelt-cloud`** wires both MCP servers and ships five skills:
+**`gdelt-cloud`** wires both MCP servers and ships seven skills:
 
 | Skill | For |
 |---|---|
-| `getting-started` | The nine rules that decide whether a call is correct. Read by the others. |
+| `getting-started` | The ten rules that decide whether a call is correct. Read by the others. |
+| `core-api` | Maps a plain-English ask onto the right endpoint and the minimal correct call |
+| `building-with-the-api` | Writing CODE against it: paging to the end, truncated vs empty, caching, cadence |
 | `war-risk-underwriting` | Chokepoint and route monitors, political-violence exposure, marine war-risk briefs |
 | `counterparty-exposure` | Company → hierarchy → assets → news → filings → government exposure |
 | `supplier-disruption` | N suppliers × M sites, daily digest with an escalation threshold |
@@ -102,7 +141,7 @@ MIT licensed. The data carries its own per-dataset licences, published at
 
 Cursor reads `.cursor-plugin/plugin.json` and a `.cursor-plugin/marketplace.json` at the repository
 root. Its skills convention is the SAME as Claude Code's and Codex's — a `skills/` directory of
-subdirectories each holding a `SKILL.md` — so all six skills are shared across the three clients
+subdirectories each holding a `SKILL.md` — so all seven skills are shared across the three clients
 with no duplication. Only the manifests and the MCP config differ.
 
 Two differences worth knowing: Cursor declares user-supplied values through a JSON Schema under
