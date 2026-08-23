@@ -9,7 +9,7 @@ The customer here is an underwriter or a marine analyst pricing a route, or a se
 on a region. They need coded incidents with severity, geography they can trust to site level, the
 articles behind each incident, and a rolling index they can defend to a committee.
 
-Read the `gdelt-cloud-getting-started` skill first — the nine rules there decide whether this is
+Read the `gdelt-cloud-getting-started` skill first — the twelve rules there decide whether this is
 correct. Two of them are load-bearing for maritime work in particular:
 
 - **`bbox` on `/events` is latitude first; `bbox` on every `/maritime/*` endpoint is longitude

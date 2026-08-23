@@ -5,7 +5,7 @@ description: Use this skill for ANY request that touches GDELT Cloud data — ev
 
 # The Core API — which endpoint answers which question
 
-Seven surfaces cover almost everything. Pick by the **shape of the question**, not by keyword.
+Eight surfaces cover almost everything. Pick by the **shape of the question**, not by keyword.
 
 | The user is asking | Endpoint | Returns |
 | --- | --- | --- |
@@ -17,6 +17,12 @@ Seven surfaces cover almost everything. Pick by the **shape of the question**, n
 | *Where is the physical asset?* | `GET /api/v2/facilities` | Plants, mines, ports, pipelines, data centres — with coordinates |
 | *How is X being talked about?* | `GET /api/v2/entities/{entity_id}/tone` | Sentiment for one entity over time, with evidence |
 | *Who dominates the conversation?* | `GET /api/v2/share-of-voice` | One entity's share of a defined story population |
+
+## One call, one Query Unit — page at 100
+
+Every call below costs 1 QU regardless of `limit`, so `limit=25` is four times the price of
+`limit=100` for the same data. Page at 100, and reach for a `/summary` endpoint before you count a
+list by walking it.
 
 ## Always start here
 
@@ -66,14 +72,17 @@ GET /api/v2/entities?search=Chevron&type=organization&days=30
 **Facilities — the physical layer.** `has_geo=true` when you intend to map or bbox them.
 
 ```
-GET /api/v2/facilities?country=Indonesia&type=mine&has_geo=true&limit=100
+GET /api/v2/facilities?country=Indonesia&type=coal_mine&has_geo=true&limit=100
 ```
 
-**Tone — how an entity is being talked about.** Needs a resolved id and a date window; `group_by`
-gives you the series, `include_evidence` gives you the stories behind each point.
+**Tone — how an entity is being talked about.** Needs a resolved id and a date window. The series
+comes back in `rows` without asking for anything; `include_evidence` adds the stories behind each
+point, and `language_breakdown` is always present if you want the per-language split. `group_by` on
+this endpoint accepts only `language` — any other value is taken and ignored, so do not reach for
+`group_by=date` here.
 
 ```
-GET /api/v2/entities/e_12345/tone?days=30&group_by=date&include_evidence=true
+GET /api/v2/entities/e_12345/tone?days=30&include_evidence=true
 ```
 
 **Share of voice — dominance within a population.** The denominator is the population you define; a

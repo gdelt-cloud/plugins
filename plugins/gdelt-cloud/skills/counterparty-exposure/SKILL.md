@@ -29,7 +29,11 @@ Then assert once, loudly, and stop if it fails:
 
 ```python
 resolved = search["data"][0]
-assert resolved["entity_id"].startswith("e_"), resolved
+# `spine_id` is the registry id, and it is the one that must be present — it is null when the
+# candidate exists only in news, EDGAR, GLEIF or an asset registry and has not been bridged.
+# `entity_id` falls back to the source candidate's own id in that case, so asserting it starts
+# with "e_" aborts on resolutions that are perfectly good for the news legs below.
+assert resolved.get("spine_id"), resolved
 ```
 
 ## The fan-out, and what each leg actually accepts
@@ -39,13 +43,24 @@ assert resolved["entity_id"].startswith("e_"), resolved
 | Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | name, `e_…`, `wiki:…`, a wikipedia URL, or a bare 20-char LEI |
 | News coverage | `GET /api/v2/events?entity=…` and `GET /api/v2/stories?entity=…` | `e_…`, `wiki:…`, or a name |
 | Media tone | `GET /api/v2/entities/{entity_id}/tone` | **requires an explicit date window** |
-| Share of voice | `GET /api/v2/share-of-voice?entity_id=…` | `entity_id`, **not** `entity` |
+| Share of voice | `GET /api/v2/share-of-voice?entity=…&category=…` | an id in `entity` / `entity_id` / `entities`, **plus a denominator** — see below |
 | Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | `e_…` or a name |
-| SEC filings | `GET /api/v2/filings?cik=…` | **CIK only — this family has no `entity` parameter** |
-| Federal awards | `GET /api/v2/gov/awards?entity=…` | `e_…`, `wiki:…` or `cik:…` — a bare name is a 400 |
+| SEC filings | `GET /api/v2/filings?cik=…` or `?search=<company name>` | CIK, ticker, or a company-name search |
+| Federal awards | `GET /api/v2/gov/awards?entity=…` or `?recipient=<name>` | `e_…`, `wiki:…`, `cik:…` on `entity`; `recipient` takes a plain name |
 | Foreign influence | `GET /api/v2/gov/fara?entity=…` | **`e_…` only** |
-| Sanctions / screening exposure | `GET /api/v2/exposure?entity=…` | `e_…`, `wiki:…` or `llm:…` — a bare name is a 400 |
+| Sanctions / screening exposure | `GET /api/v2/exposure?entity=…` or `?entity_search=<name>` | ids on `entity`; `entity_search` takes a plain name |
 | LEI record | `GET /api/v2/gleif/entities/{lei}` | LEI |
+
+**Share of voice needs a denominator, and without one it 400s.** A share is meaningless without
+saying what it is a share *of*, so the numerator alone is refused with `DENOMINATOR_REQUIRED` —
+which names the eight filters that qualify in `details.allowed_filters`. Pick one:
+
+```
+GET /api/v2/share-of-voice?entity=e_12345&category=cameoplus_crime&days=30
+```
+
+`entity`, `entity_id` and `entities` are all accepted here; `entities` is the canonical spelling and
+the only one that takes more than one id.
 
 Two traps worth naming explicitly:
 

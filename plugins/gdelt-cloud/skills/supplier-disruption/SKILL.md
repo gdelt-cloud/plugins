@@ -93,3 +93,5 @@ sorted by severity, the events with their source articles, tone deltas where ent
 naming the window, the sites that returned nothing, and any leg skipped for entitlement. The hosted
 reference implementations are <https://gdeltcloud.com/demos/bauxite-supply-chain-monitor> and
 <https://gdeltcloud.com/demos/apac-risk-workbench>.
+
+**Search in the supplier's own press.** A disruption at a Japanese, Korean or German plant is reported locally first and often only. Pass `languages=ja,ko,de` and write the semantic `search` string in that language — an English query over a non-English event returns thin, off-topic results that read as "no disruption" and are not.

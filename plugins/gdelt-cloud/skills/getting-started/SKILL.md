@@ -46,7 +46,7 @@ common way to build a filter that silently misses data. The map of which referen
 which question is at `/reference/index`.
 
 **The whole risk in this API is the confident wrong answer.** Almost every filter that is wrong in
-an interesting way returns `200` with a plausible-looking result set. Ten rules below prevent that.
+an interesting way returns `200` with a plausible-looking result set. Twelve rules below prevent that.
 Follow them and your first build will be correct; skip them and it will look correct.
 
 ## Setup
@@ -66,7 +66,7 @@ directly, which is far cheaper and more exact than a prose search:
 jq '.paths."/api/v2/events".get.parameters[] | {name, description}' openapi-v2.json
 ```
 
-## The ten rules
+## The twelve rules
 
 **1. Resolve an entity once, then reuse the id.**
 `GET /api/v2/search?q=<name>&universe=all` is the resolver the rest of the API assumes you called.
@@ -128,6 +128,23 @@ and `uid` names the survivor; `self` means a judge looked and found none; `unadj
 nothing ever compared this event to anything and `uid` is a fallback, not a verdict. `unadjudicated`
 is the honest majority: only events that were candidates for a duplicate are ever adjudicated.
 Nothing is deleted either way — the duplicate keeps its own id and stays retrievable.
+
+**11. A call costs 1 Query Unit whatever `limit` you pass — so always page at `limit=100`.**
+Every `/api/v2` call is 1 QU regardless of how many rows come back; an MCP tool call is 5. So
+`limit=25` is not cheaper than `limit=100`, it is **four times more expensive** for the same data.
+The response tells you: read the `x-quota-cost` header. Sizing rule of thumb — one thing kept
+current at hourly refresh costs about 750 QU a month, so divide a plan's QU by 750 for the number
+of things you can watch. Check your own burn at `GET /api/v2/meta/query-units`, and treat
+`QUOTA_EXCEEDED` as a sizing problem rather than a retry problem.
+
+**12. Search in the language the story was written in.**
+Non-English coverage is one of the strongest things here — Spanish, Arabic, Chinese, Portuguese and
+more — and an English query will not find it. Two separate levers: `languages=` filters by the
+source language of the coverage (`languages=it,de`), and the semantic `search` string should itself
+be written in the language of the press you are searching. Asking for Italian regulatory news in
+English returns thin, off-topic results that look like a coverage gap and are not; the same window
+asked in Italian returns the national press. If a topic looks absent, try it in its own language
+before concluding anything.
 
 ## The shape of a first build
 

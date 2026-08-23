@@ -85,3 +85,5 @@ chose.
 A CSV or Parquet frame plus a short HTML methodology page showing the series, the baseline, and the
 excluded panel. Keep the API calls in a separate module from the transform so the frame can be
 rebuilt without re-fetching.
+
+**Language is a coverage lever, not a detail.** For any country whose press is not primarily English, pass `languages=` with its language codes. A series built from English-only coverage of a non-English country is measuring foreign attention to it, which is a different variable and moves for different reasons.

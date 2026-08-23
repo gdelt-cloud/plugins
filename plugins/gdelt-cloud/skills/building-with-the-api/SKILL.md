@@ -137,7 +137,23 @@ reads are rebuilt every 30 minutes. So:
   `RATE_LIMITED` means back off and retry, and `QUOTA_EXCEEDED` means stop and tell the user. Same
   status, opposite responses — read `code`, and read `details.retry_after`.
 
-## 6. A checklist before you ship
+## 6. What a call costs, and the one lever that matters
+
+Every `/api/v2` call is **1 Query Unit whatever `limit` you pass**; an MCP tool call is 5. Discovery
+calls are free. That single fact decides more about a plan's cost than anything else in this
+document, because it inverts the intuition: `limit=25` is not cheaper than `limit=100`, it is
+**four times more expensive** for the same rows.
+
+- **Always page at `limit=100`.** Then walk the cursor as in section 1.
+- **Prefer `/summary` to counting a list.** One bucketed call answers what a full walk would cost
+  dozens of QU to answer.
+- **Read `x-quota-cost` on the response**, and your position with
+  `GET /api/v2/meta/query-units`.
+- **Size before you build.** One thing kept current at hourly refresh costs roughly 750 QU a month,
+  so a plan's QU divided by 750 is the number of things you can keep current. `QUOTA_EXCEEDED` is a
+  sizing problem, not a retry problem — see section 5 for why it is not `RATE_LIMITED`.
+
+## 7. A checklist before you ship
 
 - [ ] Every list read either walks to `next_cursor is None` or states the cap it stopped at
 - [ ] No `len(rows) >= limit` truncation checks anywhere
