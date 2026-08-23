@@ -46,6 +46,17 @@ Resolve each supplier once with `GET /api/v2/search` and cache the spine `e_…`
 `gdelt-cloud-counterparty-exposure` skill for the identifier-space rules, which apply here too. Then
 per supplier: `/events?entity=`, `/stories?entity=`, and media tone if entitled.
 
+**Read `entity_match` before you believe an events row.** It defaults to `material` — the supplier
+is a party to the event — but where material attribution has not been built the server substitutes
+`coverage`, i.e. any event in a story that mentions them, and still answers 200. It flags the
+substitution in `applied_filters.coverage_fallback_applied` and explains it in
+`applied_filters.entity_match_note`. On a supplier watchboard that distinction is the whole product:
+a coverage row can be a plant fire at your supplier or a passing mention in an unrelated market
+round-up, and only the flag tells you which reading you were given. Naming `entity_match=material`
+or `actor` explicitly returns `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today instead of substituting —
+on a watchboard, branch on that refusal rather than shipping unaudited rows. Add
+`collapse_duplicates=true` so one incident does not page you three times.
+
 For "was a supplier newly sanctioned this week", note that three different questions exist and they
 disagree:
 

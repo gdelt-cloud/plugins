@@ -41,7 +41,7 @@ assert resolved.get("spine_id"), resolved
 | Leg | Call | Identifier it wants |
 |---|---|---|
 | Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | name, `e_…`, `wiki:…`, a wikipedia URL, or a bare 20-char LEI |
-| News coverage | `GET /api/v2/events?entity=…` and `GET /api/v2/stories?entity=…` | `e_…`, `wiki:…`, or a name |
+| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | `e_…`, `wiki:…`, or a name — **and read `entity_match`**, see below |
 | Media tone | `GET /api/v2/entities/{entity_id}/tone` | **requires an explicit date window** |
 | Share of voice | `GET /api/v2/share-of-voice?entity=…&category=…` | an id in `entity` / `entity_id` / `entities`, **plus a denominator** — see below |
 | Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | `e_…` or a name |
@@ -54,6 +54,26 @@ assert resolved.get("spine_id"), resolved
 **Share of voice needs a denominator, and without one it 400s.** A share is meaningless without
 saying what it is a share *of*, so the numerator alone is refused with `DENOMINATOR_REQUIRED` —
 which names the eight filters that qualify in `details.allowed_filters`. Pick one:
+
+### `entity=` on `/events` is not "events this counterparty did"
+
+`entity_match` defaults to `material` — the counterparty is a party to the event — but where
+material attribution has not been built the server substitutes `coverage`, meaning any event in a
+story that merely mentions them, and still answers 200. Check two fields on every response:
+
+```
+applied_filters.coverage_fallback_applied   true  -> these are co-occurrence rows
+applied_filters.entity_match_note                 -> the server says so in words
+```
+
+A coverage row is not automatically wrong — a consortium-membership story is a real link — but it
+is not attribution, and a diligence memo must not present it as one. The accepted values are
+`material`, `actor` and `coverage`. Naming `material` or `actor` explicitly returns
+`503 ENTITY_ATTRIBUTION_UNAVAILABLE` today rather than substituting, which is what you want in a
+pipeline: a refusal you can branch on beats rows you have to audit. Naming `coverage` yourself
+returns the same rows as the default with `coverage_fallback_applied: false` — same data, but now
+it is your decision. On an alerting pass add `collapse_duplicates=true`, or one incident arrives as
+several rows with different significance scores.
 
 ```
 GET /api/v2/share-of-voice?entity=e_12345&category=cameoplus_crime&days=30

@@ -105,21 +105,37 @@ accepted list attached, not a confident `0%`.
 5. **Cite** it: every event links to its stories, every story to its articles. Never present a number
    without the path back to the coverage behind it.
 
-## Five things that return 200 and are wrong
+## Six things that return 200 and are wrong
 
-1. **A bare name instead of a resolved id** — different entity per endpoint.
-2. **Mixed identifier spaces** — `e_…`, `wiki:…`, GEM ids, CIK, LEI are not interchangeable, and the
+1. **Reading `entity=` on `/events` as "events this entity did"** — it is not, and this is the one
+   that has actually burned an evaluator. `entity_match` defaults to `material` (the entity is a
+   party to the event), but where material attribution has not been built the server SUBSTITUTES
+   `coverage` — story co-occurrence — and still answers 200. It tells you, in
+   `applied_filters.coverage_fallback_applied` and `applied_filters.entity_match_note`: *"These rows
+   are events in stories the entity appears in, not events the entity is a party to."* Most such
+   rows will not name your entity anywhere in their own payload, and some of them are still right.
+   Read the flag before you put the rows in front of anyone. The accepted values are `material`,
+   `actor` and `coverage`; naming either of the first two **explicitly** returns
+   `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today rather than a substitution you did not ask for, which
+   is the honest answer and the one to build against. Passing `entity_match=coverage` yourself
+   returns the same rows as the default with `coverage_fallback_applied: false`, because you asked
+   for co-occurrence instead of being handed it.
+2. **A bare name instead of a resolved id** — different entity per endpoint.
+3. **Mixed identifier spaces** — `e_…`, `wiki:…`, GEM ids, CIK, LEI are not interchangeable, and the
    accepted set differs by endpoint. The wrong one returns an empty result, not an error.
-3. **`bbox` axis order** — latitude-first on events, stories, facilities, energy; longitude-first on
+4. **`bbox` axis order** — latitude-first on events, stories, facilities, energy; longitude-first on
    maritime. Both orders are usually numerically valid, so a swap cannot error.
-4. **Unbounded `geo_precision`** — precision `3` is a country centroid, which falls inside almost any
+5. **Unbounded `geo_precision`** — precision `3` is a country centroid, which falls inside almost any
    box you draw. Pass `geo_precision_max=2` for site-level questions.
-5. **Counting rows as incidents** — an event's `id` identifies a coded *story*. Group on
-   `incident.uid`, read `incident.resolution` before trusting it, and pass
+6. **Counting rows as incidents** — an event's `id` identifies a coded *story*, so one incident
+   can arrive as several rows with different significance scores. Pass
+   `collapse_duplicates=true` to get one row per adjudicated incident; it is off by default.
+   Otherwise group on `incident.uid`, read `incident.resolution` before trusting it, and pass
    `incident_resolution=llm,self` to get only the rows where that grouping is adjudicated.
 
 Read `applied_filters` on every response. It echoes what the server actually used; a filter missing
-from it was not applied. That one habit catches all five.
+from it was not applied. That one habit catches all six — and it is the only way to see the
+`entity_match` substitution in (1) at all.
 
 ## When you need a value list
 

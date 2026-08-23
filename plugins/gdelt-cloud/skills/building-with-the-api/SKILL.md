@@ -153,7 +153,26 @@ document, because it inverts the intuition: `limit=25` is not cheaper than `limi
   so a plan's QU divided by 750 is the number of things you can keep current. `QUOTA_EXCEEDED` is a
   sizing problem, not a retry problem — see section 5 for why it is not `RATE_LIMITED`.
 
-## 7. A checklist before you ship
+## 7. What will change under you, and how to check it
+
+Do not hardcode the notice period from this file — read it. `GET /api/v2/meta/endpoints` carries a
+`stability_policy` block beside the endpoint inventory it governs, so an integration can assert its
+own assumptions instead of trusting a web page:
+
+```
+stability_policy.breaking_change_notice_days   30
+stability_policy.alias_compatibility_days      30
+stability_policy.changes_without_notice        [ … ]
+```
+
+The last one is the part that decides how you write your parser. A new endpoint, a new optional
+parameter and **a new field in a response body** all ship without notice — so parse permissively; an
+unrecognised field is not an error. So does widening what a parameter accepts, and adding a value to
+an OPEN vocabulary. A **closed** enum gaining a value is announced. And corrected data is not a
+breaking change: a score or count that was wrong is fixed as soon as it is known, which is why
+section 2's advice to end a comparison window yesterday matters more than any version pin.
+
+## 8. A checklist before you ship
 
 - [ ] Every list read either walks to `next_cursor is None` or states the cap it stopped at
 - [ ] No `len(rows) >= limit` truncation checks anywhere
@@ -163,3 +182,4 @@ document, because it inverts the intuition: `limit=25` is not cheaper than `limi
 - [ ] Windows are bounded and end yesterday if the number is compared over time
 - [ ] Entity ids are resolved once and reused; no bare names crossing endpoints
 - [ ] 429 handling branches on `code`, not on the status
+- [ ] Response parsing tolerates unrecognised fields — new ones ship without notice (section 7)
