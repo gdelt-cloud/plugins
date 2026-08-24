@@ -94,13 +94,14 @@ restart, the tools are simply absent, which reads as a broken install.
 
 ## What you get
 
-**`gdelt-cloud`** wires both MCP servers and ships seven skills:
+**`gdelt-cloud`** wires both MCP servers and ships shared workflow skills:
 
 | Skill | For |
 |---|---|
-| `getting-started` | The ten rules that decide whether a call is correct. Read by the others. |
+| `getting-started` | The rules that decide whether a call is correct. Read by the others. |
 | `core-api` | Maps a plain-English ask onto the right endpoint and the minimal correct call |
 | `building-with-the-api` | Writing CODE against it: paging to the end, truncated vs empty, caching, cadence |
+| `hosted-monitors` | Resolve → preview → create → inspect runs, signed webhooks and complete-result replay |
 | `war-risk-underwriting` | Chokepoint and route monitors, political-violence exposure, marine war-risk briefs |
 | `counterparty-exposure` | Company → hierarchy → assets → news → filings → government exposure |
 | `supplier-disruption` | N suppliers × M sites, daily digest with an escalation threshold |
@@ -141,7 +142,7 @@ MIT licensed. The data carries its own per-dataset licences, published at
 
 Cursor reads `.cursor-plugin/plugin.json` and a `.cursor-plugin/marketplace.json` at the repository
 root. Its skills convention is the SAME as Claude Code's and Codex's — a `skills/` directory of
-subdirectories each holding a `SKILL.md` — so all seven skills are shared across the three clients
+subdirectories each holding a `SKILL.md` — so the same skills are shared across the three clients
 with no duplication. Only the manifests and the MCP config differ.
 
 Two differences worth knowing: Cursor declares user-supplied values through a JSON Schema under

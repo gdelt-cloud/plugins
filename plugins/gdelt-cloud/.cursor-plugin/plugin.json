@@ -1,7 +1,7 @@
 {
   "name": "gdelt-cloud",
-  "version": "0.1.0",
-  "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure \u2014 plus six skills covering the Core API and four risk workflows.",
+  "version": "0.2.0",
+  "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure \u2014 plus shared skills for API integration, hosted monitoring and risk workflows.",
   "author": {
     "name": "GDELT Cloud",
     "email": "hello@gdeltcloud.com"

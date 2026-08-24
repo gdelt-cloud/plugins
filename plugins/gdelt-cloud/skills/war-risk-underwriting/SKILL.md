@@ -18,6 +18,12 @@ correct. Two of them are load-bearing for maritime work in particular:
 
 ## Build it in this order
 
+If the requirement is simply "notify this desk about new conflict/security coverage in this
+geography or radius," use a Hosted geography/place Monitor and the
+`gdelt-cloud-hosted-monitors` skill. Keep the workflow below in client code when it combines route
+geometry, ports, facilities, evidence hydration, rolling baselines, or a custom underwriting index;
+those are several questions and sources, not one Monitor specification.
+
 ### 1. Define the theatre as both a box and a country set
 
 Chokepoints are small and cross borders, so do both and reconcile:

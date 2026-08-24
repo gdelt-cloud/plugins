@@ -12,6 +12,11 @@ the same call every hour, page through all of it, and put the result in front of
 it has a second form — a call that is correct today and wrong at scale, because you took one page
 for the whole answer.
 
+Before adding a polling job, check `gdelt-cloud-hosted-monitors`. One recurring Event/Story question
+with hourly/daily cadence and email or signed-webhook delivery belongs in a Hosted Monitor; scheduled
+checks consume no Query Units. Keep the client build when it needs multiple endpoints, private joins,
+custom state/baselines, complete historical exports, or a different schedule.
+
 ## 1. Pagination: walk with the cursor, and trust only `next_cursor`
 
 List endpoints are cursor-paged. `limit` is capped (100 on events, 100 on stories), so **any question

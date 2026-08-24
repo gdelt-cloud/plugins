@@ -42,9 +42,11 @@ compact countries the centroid is inside every box you would draw.
 
 ## Suppliers: resolve, then watch
 
-Resolve each supplier once with `GET /api/v2/search` and cache the spine `e_…` id — see the
-`gdelt-cloud-counterparty-exposure` skill for the identifier-space rules, which apply here too. Then
-per supplier: `/events?entity=`, `/stories?entity=`, and media tone if entitled.
+Resolve each supplier once with
+`GET /api/v2/search?q=<name>&type=organization&limit=10`, present ambiguous candidates, and cache the
+selected terminal `e_…` id — see the `gdelt-cloud-counterparty-exposure` skill for the
+identifier-space rules, which apply here too. Then per supplier: `/events?entity=`,
+`/stories?entity=`, and media tone if entitled.
 
 **Read `entity_match` before you believe an events row.** It defaults to `material` — the supplier
 is a party to the event — but where material attribution has not been built the server substitutes
@@ -56,6 +58,13 @@ round-up, and only the flag tells you which reading you were given. Naming `enti
 or `actor` explicitly returns `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today instead of substituting —
 on a watchboard, branch on that refusal rather than shipping unaudited rows. Add
 `collapse_duplicates=true` so one incident does not page you three times.
+
+For a supplier set that shares one question, cadence, delivery route, and response process, prefer
+a Hosted entity Monitor with up to 25 confirmed ids and `match: coverage`; use
+`gdelt-cloud-hosted-monitors` for resolve → preview → create → replay. The Monitor is an intake
+signal, not proof that a supplier was materially affected. Keep this client watchboard when you
+need N suppliers × M sites, private dependency data, sanctions diffs, tone, a day-of-week baseline,
+or one combined escalation score: those are composite operations a single Monitor does not express.
 
 For "was a supplier newly sanctioned this week", note that three different questions exist and they
 disagree:

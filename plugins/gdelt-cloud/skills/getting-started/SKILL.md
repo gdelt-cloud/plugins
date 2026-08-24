@@ -69,9 +69,11 @@ jq '.paths."/api/v2/events".get.parameters[] | {name, description}' openapi-v2.j
 ## The twelve rules
 
 **1. Resolve an entity once, then reuse the id.**
-`GET /api/v2/search?q=<name>&universe=all` is the resolver the rest of the API assumes you called.
-It returns candidates; you pick one and keep its spine `e_…` id. Never filter by a bare company or
-person name across more than one endpoint — you will get a different entity on each.
+`GET /api/v2/search?q=<name>&type=<person|organization|place>&limit=10` is the resolver the rest of
+the API assumes you called. The canonical public call uses only `q`, optional `type`, and `limit`;
+its candidates carry terminal spine `e_…` ids. Present ambiguous candidates, pick one, and reuse
+that id. Never filter by a bare company or person name across more than one endpoint — you can get
+a different entity on each.
 
 **2. Identifier spaces are not interchangeable, and the wrong one returns an empty 200.**
 A spine `e_…` id, a news `wiki:…` id, a GEM entity id, a CIK, an LEI and a SAM.gov UEI are
@@ -80,6 +82,10 @@ alone. `/gov/awards` also takes `cik:` and rejects bare names. `/exposure` also 
 `/energy/assets` has an `owner_entity_id` that is a **GEM** id, while `/facilities` uses that same
 spelling for a spine alias. Check the identifier table in
 `/reference/parameters#identifier-parameters` before chaining two endpoints.
+
+For a new cross-surface workflow, the terminal `e_…` returned by the canonical `/search` call is
+the default join key. Reach for a source-specific identifier only when that endpoint explicitly
+requires one, such as a CIK for filings or a GEM owner id for the energy-owner registry.
 
 **3. A `/summary` endpoint is close to its list sibling, but not identical.**
 Count before you list. `/events/summary` takes 41 of the list's 50 parameters — including `days`,

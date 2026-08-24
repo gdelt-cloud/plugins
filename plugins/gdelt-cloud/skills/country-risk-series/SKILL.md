@@ -11,6 +11,11 @@ because the denominator moved underneath it.
 
 Read `gdelt-cloud-getting-started` first.
 
+This is intentionally a client workflow, not a Hosted Monitor. Atlas history, explicit baselines,
+coverage-floor handling, missing-date expansion, and market-data joins require multi-call state. A
+Hosted Monitor can complement it by notifying on one new Event/Story question, but must not be
+presented as the risk series or its anomaly detector.
+
 ## Two sources, and they answer different questions
 
 **Atlas** is the published index family, computed from our own coded events and resolved entities:

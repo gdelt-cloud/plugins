@@ -2,8 +2,9 @@
 """
 Structural validation for this marketplace, run in CI and before every push.
 
-`claude plugin validate` checks a plugin against Anthropic's schema. This checks the four
-things that schema cannot see, each of which fails SILENTLY at runtime:
+`claude plugin validate` checks a plugin against Anthropic's schema. This checks
+cross-client invariants that schema cannot see, including failures that are silent at
+runtime:
 
   1. A root `.mcp.json`. Claude Code and Codex BOTH auto-discover that filename, with
      incompatible schemas (`headers` + `${user_config.X}` vs `http_headers` +
@@ -14,6 +15,8 @@ things that schema cannot see, each of which fails SILENTLY at runtime:
      placeholder passes through UNEXPANDED and the connection fails, rather than falling
      back to OAuth.
   4. `skills/` or `commands/` placed inside `.claude-plugin/` rather than at the plugin root.
+  5. Claude, Codex, and Cursor marketplace sources, skill roots, skill sets, and version
+     policy drifting apart.
 
 Run: python3 scripts/validate.py
 """
@@ -27,6 +30,16 @@ RESERVED = {"claude-code-marketplace","claude-code-plugins","claude-plugins-offi
 KEBAB = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 errs = []
+EXPECTED_GDELT_SKILLS = {
+    'building-with-the-api',
+    'core-api',
+    'counterparty-exposure',
+    'country-risk-series',
+    'getting-started',
+    'hosted-monitors',
+    'supplier-disruption',
+    'war-risk-underwriting',
+}
 
 
 def load(p):
@@ -38,6 +51,7 @@ def load(p):
 
 
 def main() -> int:
+    client_sources = {'claude': {}, 'codex': {}, 'cursor': {}}
     mkt = load('.claude-plugin/marketplace.json')
     if mkt:
         for k in ('name', 'owner', 'plugins'):
@@ -56,6 +70,8 @@ def main() -> int:
                 errs.append(f"plugin name '{entry.get('name')}' is not kebab-case")
             if isinstance(entry.get('source'), str) and not (ROOT / root / entry['source']).is_dir():
                 errs.append(f"source does not resolve: {root}/{entry['source']}")
+            elif isinstance(entry.get('source'), str):
+                client_sources['claude'][entry['name']] = (ROOT / root / entry['source']).resolve()
 
     for d in sorted((ROOT / 'plugins').iterdir()):
         if not d.is_dir():
@@ -108,6 +124,7 @@ def main() -> int:
     if cx:
         for entry in cx.get('plugins', []):
             p = pathlib.Path(entry['source']['path'])
+            client_sources['codex'][entry['name']] = (ROOT / p).resolve()
             if not (ROOT / p).is_dir():
                 errs.append(f"codex source does not resolve: {p}")
             elif not (ROOT / p / '.codex-plugin' / 'plugin.json').exists():
@@ -133,6 +150,7 @@ def main() -> int:
     if cur:
         for entry in cur.get('plugins', []):
             p = pathlib.Path(entry['source'])
+            client_sources['cursor'][entry['name']] = (ROOT / p).resolve()
             if not (ROOT / p).is_dir():
                 errs.append(f"cursor source does not resolve: {p}")
                 continue
@@ -151,6 +169,78 @@ def main() -> int:
             sk = man.get('skills')
             if isinstance(sk, str) and not (ROOT / p / sk).is_dir():
                 errs.append(f"{p}: cursor skills points at {sk}, which is not a directory")
+
+    # All three marketplaces publish the same products. A source drift here is especially hard to
+    # see: each client validates its own manifest while users receive different plugin contents.
+    source_name_sets = {client: set(sources) for client, sources in client_sources.items()}
+    if len({frozenset(names) for names in source_name_sets.values()}) != 1:
+        errs.append(f"marketplace plugin sets differ across clients: {source_name_sets}")
+
+    for plugin_name in sorted(set().union(*source_name_sets.values())):
+        resolved_sources = {
+            client: sources.get(plugin_name)
+            for client, sources in client_sources.items()
+            if sources.get(plugin_name) is not None
+        }
+        if len(set(resolved_sources.values())) != 1:
+            display = {client: str(path) for client, path in resolved_sources.items()}
+            errs.append(f"{plugin_name}: marketplace sources differ across clients: {display}")
+            continue
+        if len(resolved_sources) != 3:
+            continue
+
+        plugin_root = next(iter(resolved_sources.values()))
+        rel = plugin_root.relative_to(ROOT)
+        manifests = {
+            'claude': load(rel / '.claude-plugin' / 'plugin.json'),
+            'codex': load(rel / '.codex-plugin' / 'plugin.json'),
+            'cursor': load(rel / '.cursor-plugin' / 'plugin.json'),
+        }
+        if not all(manifests.values()):
+            continue
+
+        # Claude is deliberately unversioned so skill-only fixes are not pinned in its cache.
+        if 'version' in manifests['claude']:
+            errs.append(f"{plugin_name}: Claude manifest must remain unversioned")
+        codex_version = manifests['codex'].get('version')
+        cursor_version = manifests['cursor'].get('version')
+        if not codex_version or not cursor_version:
+            errs.append(f"{plugin_name}: Codex and Cursor manifests both require a version")
+        elif codex_version != cursor_version:
+            errs.append(
+                f"{plugin_name}: Codex version {codex_version!r} != Cursor version {cursor_version!r}"
+            )
+
+        skill_refs = {
+            client: manifest.get('skills')
+            for client, manifest in manifests.items()
+            if manifest.get('skills') is not None
+        }
+        if not skill_refs:
+            continue
+        if set(skill_refs) != {'claude', 'codex', 'cursor'}:
+            errs.append(f"{plugin_name}: skills must be declared by all three clients: {skill_refs}")
+            continue
+        skill_dirs = {
+            client: (plugin_root / pathlib.Path(ref)).resolve()
+            for client, ref in skill_refs.items()
+            if isinstance(ref, str)
+        }
+        if len(skill_dirs) != 3 or len(set(skill_dirs.values())) != 1:
+            display = {client: str(path) for client, path in skill_dirs.items()}
+            errs.append(f"{plugin_name}: skill directories differ across clients: {display}")
+            continue
+        skill_dir = next(iter(skill_dirs.values()))
+        actual_skills = {
+            path.name for path in skill_dir.iterdir()
+            if path.is_dir() and (path / 'SKILL.md').exists()
+        }
+        if plugin_name == 'gdelt-cloud' and actual_skills != EXPECTED_GDELT_SKILLS:
+            errs.append(
+                f"{plugin_name}: shared skill set drifted; missing="
+                f"{sorted(EXPECTED_GDELT_SKILLS - actual_skills)}, extra="
+                f"{sorted(actual_skills - EXPECTED_GDELT_SKILLS)}"
+            )
 
     for e in errs:
         print(f"ERROR: {e}")

@@ -27,12 +27,14 @@ list by walking it.
 ## Always start here
 
 ```
-GET /api/v2/search?q=<name>&universe=all
+GET /api/v2/search?q=<name>&type=<person|organization|place>&limit=10
 ```
 
-Almost every interesting question is about a *thing* — a company, a country, a port. Resolve it once,
-keep the `e_…` id, reuse it everywhere. Filtering by a bare name across two endpoints gets you two
-different entities and no error. This is the single most common way a first build goes silently wrong.
+Almost every interesting question is about a *thing* — a company, a country, a port. The canonical
+resolver uses only `q`, optional `type`, and `limit`, and returns terminal `e_…` candidates. Present
+ambiguity, select one, and reuse that id everywhere. Filtering by a bare name across two endpoints
+gets you two different entities and no error. This is the single most common way a first build goes
+silently wrong.
 
 ## The minimal correct call for each
 
@@ -104,6 +106,10 @@ accepted list attached, not a confident `0%`.
    `/facilities` for the physical assets in the same geography.
 5. **Cite** it: every event links to its stories, every story to its articles. Never present a number
    without the path back to the coverage behind it.
+
+If the user wants the same single Event/Story question checked hourly or daily, switch to the
+`gdelt-cloud-hosted-monitors` skill instead of writing a polling loop. Keep custom code for joins,
+private state, nonstandard schedules, multi-endpoint dashboards, and historical baselines.
 
 ## Six things that return 200 and are wrong
 

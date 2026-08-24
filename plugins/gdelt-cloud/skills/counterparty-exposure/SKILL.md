@@ -14,12 +14,13 @@ Read `gdelt-cloud-getting-started` first. Rule 2 is the whole game here.
 ## Resolve once, and record what you resolved
 
 ```
-GET /api/v2/search?q=<company name>&universe=all
+GET /api/v2/search?q=<company name>&type=organization&limit=10
 ```
 
 Returns candidates across every universe — news, Wikipedia, SEC/EDGAR, Global Energy Monitor,
-sanctions lists, China development finance — deduplicated to one row per real-world entity, keyed on
-the canonical spine `e_…` id, with a per-source breakdown.
+sanctions lists, China development finance — deduplicated to terminal spine `e_…` ids, with a
+per-source breakdown. `q`, optional `type`, and `limit` are the canonical public parameters. Present
+ambiguous candidates instead of automatically selecting the first row.
 
 Keep the whole row, not just the id. It carries the `identifiers` map, which is how you cross into
 the other id spaces. **Ask the `gdelt-cloud-docs` MCP for the exact key names before you index into it** — they
@@ -29,27 +30,30 @@ Then assert once, loudly, and stop if it fails:
 
 ```python
 resolved = search["data"][0]
-# `spine_id` is the registry id, and it is the one that must be present — it is null when the
-# candidate exists only in news, EDGAR, GLEIF or an asset registry and has not been bridged.
-# `entity_id` falls back to the source candidate's own id in that case, so asserting it starts
-# with "e_" aborts on resolutions that are perfectly good for the news legs below.
-assert resolved.get("spine_id"), resolved
+# Canonical public search returns terminal ids only. Never carry an llm:, wiki:, GEM, CIK or bare
+# name forward as though it were the shared spine key.
+assert resolved.get("entity_id", "").startswith("e_"), resolved
+entity_id = resolved["entity_id"]
 ```
 
 ## The fan-out, and what each leg actually accepts
 
 | Leg | Call | Identifier it wants |
 |---|---|---|
-| Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | name, `e_…`, `wiki:…`, a wikipedia URL, or a bare 20-char LEI |
-| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | `e_…`, `wiki:…`, or a name — **and read `entity_match`**, see below |
+| Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | use the selected terminal `e_…` id |
+| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | use the same terminal `e_…` id — **and read `entity_match`**, see below |
 | Media tone | `GET /api/v2/entities/{entity_id}/tone` | **requires an explicit date window** |
 | Share of voice | `GET /api/v2/share-of-voice?entity=…&category=…` | an id in `entity` / `entity_id` / `entities`, **plus a denominator** — see below |
-| Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | `e_…` or a name |
+| Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | use the terminal `e_…`; keep source-specific GEM ids separate |
 | SEC filings | `GET /api/v2/filings?cik=…` or `?search=<company name>` | CIK, ticker, or a company-name search |
-| Federal awards | `GET /api/v2/gov/awards?entity=…` or `?recipient=<name>` | `e_…`, `wiki:…`, `cik:…` on `entity`; `recipient` takes a plain name |
+| Federal awards | `GET /api/v2/gov/awards?entity=…` or `?recipient=<name>` | prefer terminal `e_…` on `entity`; `recipient` is the explicit fuzzy-name path |
 | Foreign influence | `GET /api/v2/gov/fara?entity=…` | **`e_…` only** |
 | Sanctions / screening exposure | `GET /api/v2/exposure?entity=…` or `?entity_search=<name>` | ids on `entity`; `entity_search` takes a plain name |
 | LEI record | `GET /api/v2/gleif/entities/{lei}` | LEI |
+
+Compatibility aliases accepted by an individual endpoint are not a reason to mix identifiers in a
+new workflow. Use the terminal `e_…` everywhere it is accepted, and branch to an identifier from
+the candidate's `identifiers` map only for a source-specific leg that requires it.
 
 **Share of voice needs a denominator, and without one it 400s.** A share is meaningless without
 saying what it is a share *of*, so the numerator alone is refused with `DENOMINATOR_REQUIRED` —
@@ -113,6 +117,12 @@ Per company, per week:
 5. A "what we could not see" section. This is not boilerplate: owner resolution across the asset
    directory is partial and the API publishes its own coverage rate. A digest that silently omits
    what it could not join is the failure mode this whole workflow exists to avoid.
+
+For recurring intake, a Hosted entity Monitor can notify on broad new Story coverage for the
+confirmed counterparty ids. Use `gdelt-cloud-hosted-monitors` to preview and create it, and label the
+signal as coverage rather than material involvement. The hierarchy, filings, government, asset,
+tone, share-of-voice, and screening fan-out remains a client workflow after a trigger; one Hosted
+Monitor cannot represent that composite diligence question.
 
 ## Output
 
