@@ -91,6 +91,13 @@ MCP: inspect `preview_monitor` with `gdelt_cloud_tool_get`, then execute it thro
 `gdelt_cloud_tool_call`. Its arguments are the flattened form published by that tool schema; do not
 guess from the REST JSON body.
 
+**Two execution wrappers, and picking the wrong one fails the call.** `gdelt_cloud_tool_call` is
+read-only; every tool that creates, updates, pauses, deletes or *sends* something runs through
+`gdelt_cloud_tool_write` instead. Passing a mutating tool to `gdelt_cloud_tool_call` is refused —
+it is not a soft warning. `preview_monitor` is deliberately a READ: it costs a Query Unit but
+creates nothing, so it belongs on `gdelt_cloud_tool_call`. Each entry in `gdelt_cloud_tool_list`
+names its own wrapper in `call_with`; read that rather than inferring from the verb.
+
 Preview and create accept the same Monitor specification. Read the returned rows, not only the
 status and count. Confirm that geography, taxonomy, semantic topic, and entity coverage match what
 the user meant. Compare a meaningful negative or mirror control when a silently ignored filter
@@ -128,8 +135,9 @@ Example REST body:
 
 ### 4. Create and retain operation-only secrets
 
-REST: `POST /api/v2/monitors`. MCP: inspect `create_monitor`, then pass that underlying tool name
-and its published arguments to `gdelt_cloud_tool_call`.
+REST: `POST /api/v2/monitors`. MCP: inspect `create_monitor` with `gdelt_cloud_tool_get`, then
+pass that underlying tool name and its published arguments to **`gdelt_cloud_tool_write`** —
+creation changes state, so `gdelt_cloud_tool_call` refuses it.
 
 Creation requires an organization owner/admin and is subject to the plan's Monitor count, cadence,
 and webhook entitlement. The response returns the stored canonical Monitor. If webhook delivery is
@@ -167,9 +175,12 @@ PATCH `delivery.webhook_url` to `null` to remove webhook delivery. Set
 changing unrelated fields does not rotate it. Never log the secret or put it in a URL, source file,
 or example as a real value.
 
-The underlying MCP management tools are `list_monitors`, `get_monitor`, `set_monitor_enabled`,
-`configure_monitor_delivery`, `test_monitor_delivery`, and `delete_monitor`. Discover each with
-`gdelt_cloud_tool_get` and execute it with `gdelt_cloud_tool_call`. Confirm the stored subject,
+The underlying MCP management tools split across the two wrappers. Reads —
+`list_monitors`, `get_monitor`, `list_monitor_runs`, `get_monitor_run` — run through
+`gdelt_cloud_tool_call`. Writes — `set_monitor_enabled`, `configure_monitor_delivery`,
+`test_monitor_delivery` (it sends a real signed webhook to an external destination),
+`update_monitor`, `run_monitor_now` and `delete_monitor` — run through `gdelt_cloud_tool_write`.
+Discover each with `gdelt_cloud_tool_get`, which names the correct wrapper in `call_with`. Confirm the stored subject,
 criteria, cadence, enabled state, and delivery health after mutation. Delete only when the user
 explicitly asks; pausing is the reversible choice.
 
