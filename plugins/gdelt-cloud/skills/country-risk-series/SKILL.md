@@ -50,14 +50,34 @@ as a modelling choice you have to defend, not a default.
    by GPR as though it were an absolute scale.
 2. **Fix the base window across the whole panel and state it.** A rolling baseline that moves with
    the series will flatten exactly the regime change you are trying to detect.
-3. **`variant` and `construction` change what you are measuring.** The two GPR lenses and the
-   own-coverage vs world-corpus constructions are different series, not settings. Pick one per panel
-   and put it in the column name. Ask the `gdelt-cloud-docs` MCP for the current accepted values rather than
-   hardcoding them — the 400 carries `details.accepted_values`.
-4. **Never correlate two `*_share` columns.** They are compositional; a share series and another
-   share series over the same denominator are mechanically related.
+3. **`variant` and `construction` change what you are measuring — and only one construction is
+   sound for time-series work.** The two GPR lenses and the own-coverage vs world-corpus
+   constructions are different series, not settings. Pick one per panel and put it in the column
+   name. Ask the `gdelt-cloud-docs` MCP for the current accepted values rather than hardcoding them
+   — the 400 carries `details.accepted_values`.
+
+   The default, `own_coverage`, normalises a place against its own coverage, which carries that
+   country's publishing calendar into the index — and the calendar does not point the same way
+   everywhere. Measured at `level=country` over 2026-04-01..2026-08-27, the median weekend/weekday
+   `pulse` ratio was **1.088 for USA, 1.028 for IND and 0.616 for CHN**. A weekly panel built on
+   `own_coverage` is therefore reading a country-specific calendar artifact that has nothing to do
+   with geopolitical risk, and every cross-country comparison inherits it. **Use `world_corpus` for
+   any series you will difference, correlate, or join to returns** — it normalises against the whole
+   corpus, so the country's own publishing rhythm is not in the denominator. `own_coverage` is not
+   the wrong answer in general; it answers a different and legitimate question — how much of *this*
+   country's own coverage is tense — and that is a level reading, not a series.
+4. **Never correlate two `*_share` columns, and never treat one as a plain ratio.** They are
+   compositional; a share series and another share series over the same denominator are mechanically
+   related. `tension_share` is also **significance-weighted**, not qualifying events over coverage
+   events: for USA on 2026-08-27 it read 0.2097 where the raw ratio was 0.1782. A reader who
+   recomputes it from the published counts gets a different number and concludes the API is wrong.
 5. **Day of week is a real effect.** Weekend news volume is structurally lower and the abnormality
-   band fires several times more often on Sundays. Either control for it or resample weekly.
+   band fires several times more often on Sundays. Either control for it or resample weekly — and
+   note that resampling does not remove it from an `own_coverage` series, which is rule 3.
+6. **Absolute event counts are not a trend series.** Corpus throughput roughly tripled inside the
+   covered window — 17,471 events in March 2026 against 56,094 in the 30 days to 2026-08-28 — so
+   month-over-month movement in a raw count is dominated by ingest growth, not by the world. Deflate
+   by a coverage denominator from the same window, or read Atlas, which already normalises.
 
 ## Windows and joins
 
