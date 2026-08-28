@@ -80,11 +80,18 @@ compliance control** — say so in the output, every time.
 
 ## Counting, and why you cannot
 
-There is no `total` on any list response — pagination is `{limit, cursor, next_cursor}`.
-`/events/summary` DOES take `country_match`, `geo_precision_max` and `entity`, so it can give you
-the count of the population your list describes — but confirm that by comparing `applied_filters`
-on both responses rather than assuming it, and note it takes no `search`. Consequences you must
-still build around:
+A list response does not carry a total by default — pagination is `{limit, cursor, next_cursor}`.
+Two ways to get one, and they answer slightly different questions:
+
+- **`include_total=true` on `/events`** adds `pagination.estimated_total`. Opt-in because it is a
+  second scan of the same window, so ask on the first page and not on every one. It is `null` on a
+  `search=` request, and it is not available on every list endpoint — check the parameter list for
+  the one you are calling.
+- **`/events/summary`** takes `country_match`, `geo_precision_max` and `entity`, so it can count
+  the population your list describes — but it takes no `search`, so confirm the two agree by
+  comparing `applied_filters` on both responses rather than assuming it.
+
+Where neither is available to you, the consequences you must build around:
 
 - Report "at least N" and whether you stopped early, never a bare count.
 - An escalation threshold above one page size can never fire unless you paginate to exhaustion.

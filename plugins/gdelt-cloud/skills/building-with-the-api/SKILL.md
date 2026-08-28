@@ -165,10 +165,14 @@ Do not hardcode the notice period from this file — read it. `GET /api/v2/meta/
 own assumptions instead of trusting a web page:
 
 ```
-stability_policy.breaking_change_notice_days   30
-stability_policy.alias_compatibility_days      30
+stability_policy.breaking_change_notice_days   <days>
+stability_policy.alias_compatibility_days      <days>
 stability_policy.changes_without_notice        [ … ]
 ```
+
+The two day counts are deliberately not written out here. This section previously printed them,
+directly under the sentence telling you not to hardcode them — read the response, and the policy
+in prose at `/reference/stability`.
 
 The last one is the part that decides how you write your parser. A new endpoint, a new optional
 parameter and **a new field in a response body** all ship without notice — so parse permissively; an

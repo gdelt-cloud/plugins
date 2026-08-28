@@ -5,6 +5,16 @@ world's news. Coded events in a CAMEO+ / ACLED-aligned taxonomy, deduplicated st
 their source articles, entities resolved to one spine across news, SEC filings, sanctions lists and
 asset registries, and the physical assets underneath.
 
+Three jobs this is built for:
+
+- **Software against the REST API** — `https://gdeltcloud.com/api/v2`, an API key, your language.
+- **Agents on the MCP server** — the same data as tools, with progressive discovery.
+- **Conversational use** in a chat client that can reach an MCP server (ChatGPT, Claude, Cowork).
+
+The MCP servers give an agent the data. The skills give it the procedures for using the data
+*correctly*, which is the harder half: almost every way of getting this API wrong returns `200`
+with a plausible-looking answer rather than an error.
+
 ## Install
 
 ### Claude Code
@@ -29,10 +39,15 @@ claude plugin install gdelt-cloud@gdelt-cloud --config gdelt_api_key=gdelt_sk_..
 
 ```bash
 codex plugin marketplace add gdelt-cloud/plugins
+codex plugin add gdelt-cloud@gdelt-cloud
 ```
 
+**Both commands.** `marketplace add` only registers the source — run `codex plugin list` after it
+alone and the plugin reads `not installed`, which looks identical to a broken install. This README
+used to show only the first line.
+
 Then `export GDELT_API_KEY=gdelt_sk_...` — Codex reads the bearer token from the environment rather
-than prompting.
+than prompting, so export it in whatever shell profile Codex inherits before starting it.
 
 ### Just the docs, no account
 
@@ -123,8 +138,9 @@ shorter.
 
 ## Working demos
 
-Four complete reference implementations, each a self-contained Python project rendering a static
-HTML dashboard: <https://github.com/gdelt-cloud/demos>
+Complete reference implementations, each a self-contained Python project — static HTML dashboards,
+a Monitor webhook receiver, and end-to-end Monitor workflows:
+<https://github.com/gdelt-cloud/demos>
 
 ## Links
 

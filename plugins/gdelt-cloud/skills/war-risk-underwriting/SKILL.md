@@ -90,9 +90,10 @@ GET /api/v2/energy/assets?bbox=…           # GEM energy infrastructure with ca
 GET /api/v2/maritime/ports?bbox=…          # NOTE: longitude-first bbox
 ```
 
-Owner resolution is partial by design and the API tells you so — roughly half of facility rows carry
-a spine-resolved owner, and port rows carry essentially none. When you cannot bridge an asset to its
-owner, say "not resolved", never "no exposure".
+Owner resolution is partial by design and the API tells you so: a substantial share of facility
+rows carry no spine-resolved owner, and port rows carry essentially none. The share moves as the
+spine grows, so measure it over your own portfolio rather than planning around a figure from a
+skill file. When you cannot bridge an asset to its owner, say "not resolved", never "no exposure".
 
 ### 6. The index
 

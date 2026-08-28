@@ -5,6 +5,18 @@ description: Use this skill whenever the user mentions GDELT Cloud at all — be
 
 # Building on GDELT Cloud — read this before your first call
 
+**Who this is for.** Three jobs, and none of them is clicking around a web app:
+
+1. **Building software against the REST API** — `https://gdeltcloud.com/api/v2`, an API key, and
+   whatever language you are in. Most of what follows is about getting these calls *right*.
+2. **Building an agent on the MCP server** — the same data as tools, with progressive discovery so
+   a large surface does not eat your context. See `gdelt-cloud-building-with-the-api`.
+3. **Answering questions conversationally** in a chat client that can reach an MCP server
+   (ChatGPT, Claude, Cowork). The same rules apply; you just call the tools instead of writing
+   the requests. Note that some chat clients' connector UIs have no field for an API key, so that
+   path may reach only the unauthenticated docs server — check what you are actually connected to
+   before concluding a dataset is empty.
+
 GDELT Cloud is a clean event database over the world's news. It is **not** raw GDELT — we ingest
 the public GDELT article stream as one input and never their coded output. Events are coded here,
 from clustered news stories, into a CAMEO+ / ACLED-aligned taxonomy; entities are resolved to one
@@ -75,6 +87,13 @@ its candidates carry terminal spine `e_…` ids. Present ambiguous candidates, p
 that id. Never filter by a bare company or person name across more than one endpoint — you can get
 a different entity on each.
 
+**`entity` is the canonical spelling of that parameter, everywhere.** Older aliases (`entity_id`,
+and `entities` where an endpoint takes several) are still accepted and still documented per
+endpoint, but `entity` is the name to write in new code and the name `applied_filters` echoes
+back. Where an endpoint accepts more than one id at once it says so in its parameter list —
+`/reference/parameters#identifier-parameters` is the table, and it is the only place that is
+current.
+
 **2. Identifier spaces are not interchangeable, and the wrong one returns an empty 200.**
 A spine `e_…` id, a news `wiki:…` id, a GEM entity id, a CIK, an LEI and a SAM.gov UEI are
 different things, and the set each endpoint accepts differs by endpoint. `/gov/fara` takes `e_…`
@@ -88,12 +107,13 @@ the default join key. Reach for a source-specific identifier only when that endp
 requires one, such as a CIK for filings or a GEM owner id for the energy-owner registry.
 
 **3. A `/summary` endpoint is close to its list sibling, but not identical.**
-Count before you list. `/events/summary` takes 41 of the list's 50 parameters — including `days`,
-`date`, `date_start`/`date_end`, `entity`, `country_match` and `geo_precision_max`. What it does not
-take is `search`, `sort` and `cursor`, which are list concerns. An unknown parameter lands in
-`applied_filters.ignored` rather than 400ing, so a summary and a list CAN describe different
-populations while both return 200 — compare `applied_filters` on both, and check the current gap at
-`/reference/endpoints` rather than trusting this paragraph, which is a snapshot.
+Count before you list. `/events/summary` takes most of the list's filters — `days`, `date`,
+`date_start`/`date_end`, `entity`, `country_match`, `geo_precision_max` — and not the list-only
+concerns `search`, `sort` and `cursor`. An unknown parameter lands in `applied_filters.ignored`
+rather than 400ing, so a summary and a list CAN describe different populations while both return
+200. Compare `applied_filters` on both, and read the exact per-endpoint parameter set from
+`/reference/endpoints` or the OpenAPI spec through the docs MCP. Do not memorise a count: the two
+lists move independently, which is the whole reason this rule exists.
 
 **4. `bbox` axis order differs by family.**
 Events, stories, facilities and energy take **latitude first** (`lat_min,lon_min,lat_max,lon_max`).
@@ -119,29 +139,33 @@ It echoes what the server actually used, under canonical names. A filter you pas
 from it was not applied. This is the fastest way to catch rules 2, 3 and 5 going wrong.
 
 **9. Bound every query by date, and know where history starts.**
-Windows are capped (30 days on most endpoints) and consistently coded history begins **March 2026**.
-Earlier dates return a near-empty result that reads like a bug and is not.
+Windows are capped on most endpoints, and consistently coded history begins in **March 2026** —
+earlier dates return a near-empty result that reads like a bug and is not. Both the cap and the
+start move as coverage is backfilled: the caps are per-endpoint at `/reference/endpoints`, and the
+earliest date a surface can answer for is at `/metrics/limits`. If you want the corpus as files
+rather than pages of JSON, see "Bulk downloads" below.
 
 **10. `count()` over events is not an incident count — read `incident`.**
 An event's `id` identifies a CODED STORY. One real-world incident covered by two story clusters is
 coded twice, so counting rows over-counts incidents and summing `fatalities` double-counts the dead.
 Every event card carries an `incident` block: group or count on `incident.uid` instead of `id`.
-Adjudication is partial by design — roughly 7% of events on a typical day — so pass
-`incident_resolution=llm,self` when you need the subset where `incident.uid` is a trustworthy
-grouping key.
+Adjudication is partial by design — a minority of events on any given day, because only events
+that were CANDIDATES for a duplicate are ever compared — so pass `incident_resolution=llm,self`
+when you need the subset where `incident.uid` is a trustworthy grouping key. Do not plan around a
+fixed share; count `incident_resolution` yourself over your own window if the ratio matters.
 **Always read `incident.resolution` before trusting it** — `llm` means a judge confirmed a duplicate
 and `uid` names the survivor; `self` means a judge looked and found none; `unadjudicated` means
 nothing ever compared this event to anything and `uid` is a fallback, not a verdict. `unadjudicated`
 is the honest majority: only events that were candidates for a duplicate are ever adjudicated.
 Nothing is deleted either way — the duplicate keeps its own id and stays retrievable.
 
-**11. A call costs 1 Query Unit whatever `limit` you pass — so always page at `limit=100`.**
-Every `/api/v2` call is 1 QU regardless of how many rows come back; an MCP tool call is 5. So
-`limit=25` is not cheaper than `limit=100`, it is **four times more expensive** for the same data.
-The response tells you: read the `x-quota-cost` header. Sizing rule of thumb — one thing kept
-current at hourly refresh costs about 750 QU a month, so divide a plan's QU by 750 for the number
-of things you can watch. Check your own burn at `GET /api/v2/meta/query-units`, and treat
-`QUOTA_EXCEEDED` as a sizing problem rather than a retry problem.
+**11. A call costs the same whatever `limit` you pass — so always page at the maximum.**
+A `/api/v2` call is charged per CALL, not per row, so `limit=25` is not cheaper than `limit=100`:
+it is four times more expensive for the same data. An MCP tool call costs more than a REST call.
+Ask `GET /api/v2/meta/query-units` for the current rates and your own burn rather than assuming
+either number, and read the `x-quota-cost` header to see what a call actually cost. Size a build
+as (plan QU) ÷ (calls per subject per month) — a subject refreshed hourly is ~730 calls — and
+treat `QUOTA_EXCEEDED` as a sizing problem, not a retry problem.
 
 **12. Search in the language the story was written in.**
 Non-English coverage is one of the strongest things here — Spanish, Arabic, Chinese, Portuguese and
@@ -151,6 +175,28 @@ be written in the language of the press you are searching. Asking for Italian re
 English returns thin, off-topic results that look like a coverage gap and are not; the same window
 asked in Italian returns the national press. If a topic looks absent, try it in its own language
 before concluding anything.
+
+## Bulk downloads — when you want the corpus, not a page of it
+
+Paging `/events` in 30-day windows to build a local frame is the wrong tool for a backfill, and it
+is the expensive one: every page is a charged call. The same coded events are published as files.
+
+```
+GET /api/v2/bulk/files                     # the manifest: dataset, period, format, rows, sha256
+GET /api/v2/bulk/files/{file_id}/url       # a short-lived signed download URL
+```
+
+One file per calendar month plus a rolling full-history file, in Parquet and gzipped CSV with
+identical rows and column names. Prefer Parquet: a null stays a null and an array stays a list.
+In CSV an empty field IS a null and array columns are JSON — parse them with a JSON reader, not by
+splitting on a delimiter. Every file publishes a `sha256`, a byte size and a row count; check the
+digest before loading. Full column reference: `/data/bulk-events-schema`.
+
+Two things to know before you plan around it. **It is gated** — bulk export is included on the
+Intelligence, Enterprise and Academic plans, and a key without it gets a `403`, not an empty list.
+And **it is early**: history is not fully backfilled and completeness varies by period, which is
+why every manifest row carries a per-month settled-day count. Read that count rather than assuming
+a month is whole.
 
 ## The shape of a first build
 

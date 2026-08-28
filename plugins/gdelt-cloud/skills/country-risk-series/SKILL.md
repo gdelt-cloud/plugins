@@ -38,8 +38,10 @@ coverage. Countries below the floor should be **excluded from the panel, not rea
 thin-coverage country scores quiet for the same reason a well-covered peaceful one does, and nothing
 downstream can tell those apart.
 
-Measured over a recent 107-day window, only a small minority of countries cleared the per-country
-floor on most days. Treat a wide panel as a modelling choice you have to defend, not a default.
+Measured over a recent multi-month window, only a small minority of countries cleared the
+per-country floor on most days — and that share changes as coverage grows, so measure it for the
+countries and window you actually intend to chart before committing to a panel. Treat a wide panel
+as a modelling choice you have to defend, not a default.
 
 ## The baseline rules that make a series comparable
 
@@ -60,7 +62,8 @@ floor on most days. Treat a wide panel as a modelling choice you have to defend,
 ## Windows and joins
 
 Windows are capped at 30 days per call, so a long panel means paginating by window and concatenating.
-Coded history begins **March 2026** — anything earlier returns near-empty, which will look like a
+Coded history begins in **March 2026** and the boundary moves as history is backfilled (rule 9 in
+`gdelt-cloud-getting-started`) — anything earlier returns near-empty, which will look like a
 regime of perfect calm if you do not clip it.
 
 Emit an explicit date index with no gaps, so a missing reading is `NaN` rather than an absent row.
@@ -90,5 +93,13 @@ chose.
 A CSV or Parquet frame plus a short HTML methodology page showing the series, the baseline, and the
 excluded panel. Keep the API calls in a separate module from the transform so the frame can be
 rebuilt without re-fetching.
+
+**For the historical span, start from the bulk files rather than paging.** A multi-month backfill
+walked through `/events` in 30-day windows is many charged calls for data that is already published
+as one Parquet file per month (`GET /api/v2/bulk/files` — see the bulk section in
+`gdelt-cloud-getting-started`). Page the API for the recent tail the files do not cover yet, and for
+anything you need filtered server-side. Bulk export is gated to the Intelligence, Enterprise and
+Academic plans, so check before designing around it, and read each month's settled-day count rather
+than assuming a period is complete.
 
 **Language is a coverage lever, not a detail.** For any country whose press is not primarily English, pass `languages=` with its language codes. A series built from English-only coverage of a non-English country is measuring foreign attention to it, which is a different variable and moves for different reasons.
