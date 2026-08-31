@@ -133,11 +133,10 @@ private state, nonstandard schedules, multi-endpoint dashboards, and historical 
    maritime. Both orders are usually numerically valid, so a swap cannot error.
 5. **Unbounded `geo_precision`** — precision `3` is a country centroid, which falls inside almost any
    box you draw. Pass `geo_precision_max=2` for site-level questions.
-6. **Counting rows as incidents** — an event's `id` identifies a coded *story*, so one incident
-   can arrive as several rows with different significance scores. Pass
-   `collapse_duplicates=true` to get one row per adjudicated incident; it is off by default.
-   Otherwise group on `incident.uid`, read `incident.resolution` before trusting it, and pass
-   `incident_resolution=llm,self` to get only the rows where that grouping is adjudicated.
+6. **Dropping incident identity while merging queries** — the Event surface serves the adjudicated
+   incident view, but the same incident can still be returned by several entity/site queries. Merge
+   on `incident.uid`, read `incident.resolution` before trusting it, and pass
+   `incident_resolution=llm,self` to keep only groupings that were adjudicated.
 
 Read `applied_filters` on every response. It echoes what the server actually used; a filter missing
 from it was not applied. That one habit catches all six — and it is the only way to see the

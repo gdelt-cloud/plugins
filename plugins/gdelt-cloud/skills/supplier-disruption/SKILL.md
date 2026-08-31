@@ -23,18 +23,20 @@ docs MCP for the domain code pages (`/reference/codes-domains`) and assemble you
 (category, subcategory) pairs once, at the top of the file, with a comment saying why each is in it.
 Do not hardcode the list from memory — it is published and it changes.
 
-## Sites: box, then refine
+## Sites: use the native exact-radius filter
 
 ```
 GET /api/v2/events
-  ?bbox=<lat_min,lon_min,lat_max,lon_max>
+  ?near=<latitude,longitude>
+  &radius_km=<kilometres>
   &country_match=location
   &geo_precision_max=2
   &date_start=…&date_end=…
 ```
 
-`bbox` on `/events` is **latitude first** and is applied as the enclosing box, not a true radius —
-a deliberate superset. Refine with a haversine filter against each site's coordinates client-side.
+`near` is **latitude first** and `/events` applies an exact great-circle distance fence after a
+bounding-box candidate prune. Use `bbox=<lat_min,lon_min,lat_max,lon_max>` only when the site scope
+really is rectangular; do not reimplement proximity with a client-side haversine filter.
 
 `geo_precision_max=2` is the difference between an event at your plant and an event anywhere in that
 country. Without it, every country-centroid event inside your box scores as on-site, and in
@@ -56,8 +58,9 @@ substitution in `applied_filters.coverage_fallback_applied` and explains it in
 a coverage row can be a plant fire at your supplier or a passing mention in an unrelated market
 round-up, and only the flag tells you which reading you were given. Naming `entity_match=material`
 or `actor` explicitly returns `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today instead of substituting —
-on a watchboard, branch on that refusal rather than shipping unaudited rows. Add
-`collapse_duplicates=true` so one incident does not page you three times.
+on a watchboard, branch on that refusal rather than shipping unaudited rows. The Event surface
+already serves the adjudicated incident view; preserve `incident.uid` as the deduplication key when
+merging pages or combining several supplier queries.
 
 For a supplier set that shares one question, cadence, delivery route, and response process, prefer
 a Hosted entity Monitor with up to 25 confirmed ids and `match: coverage`; use

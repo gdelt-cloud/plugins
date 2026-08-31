@@ -76,8 +76,9 @@ is not attribution, and a diligence memo must not present it as one. The accepte
 `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today rather than substituting, which is what you want in a
 pipeline: a refusal you can branch on beats rows you have to audit. Naming `coverage` yourself
 returns the same rows as the default with `coverage_fallback_applied: false` — same data, but now
-it is your decision. On an alerting pass add `collapse_duplicates=true`, or one incident arrives as
-several rows with different significance scores.
+it is your decision. When combining several counterparties, merge returned Events on
+`incident.uid`; duplicate suppression is part of the served incident view and is not a request
+switch.
 
 ```
 GET /api/v2/share-of-voice?entity=e_12345&category=cameoplus_crime&days=30
