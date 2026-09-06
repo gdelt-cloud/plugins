@@ -73,8 +73,8 @@ CAMEO+ and Conflict filters require Event data; Story filters require Story data
 for current accepted values instead of inventing a category. `criteria.search` is semantic content
 matching and may refine any subject. Omit `criteria.search` entirely for broad structured-subject
 coverage with no semantic refinement; do not send an empty string. Geography belongs either to a
-geography subject or to criteria for another subject, never both. `collapse_duplicates` should
-normally stay true.
+geography subject or to criteria for another subject, never both. Duplicate event rows are not a
+public Monitor option; the service evaluates its adjudicated incident view automatically.
 
 Public v1 supports only `trigger: {"type":"new_matches"}`. Do not request `volume_spike`, entity
 `material`, or entity `actor`; those are deferred compatibility values, not public write options.
@@ -102,8 +102,11 @@ Preview and create accept the same Monitor specification. Read the returned rows
 status and count. Confirm that geography, taxonomy, semantic topic, and entity coverage match what
 the user meant. Compare a meaningful negative or mirror control when a silently ignored filter
 would produce a plausible result. A successful Preview costs 1 Query Unit, creates no Monitor, and
-sends no delivery. The REST response envelope is `{ "success": true, "preview": { ... } }`; do not
-invent top-level preview fields.
+sends no external delivery for an API-key caller. In the signed-in web Builder, every Preview also
+performs a real, signed `monitor.test` round-trip to a two-minute first-party receiver and shows the
+actual request and response transcript. That demonstration is free, creates no saved Monitor or
+run, and does not prove that a user's eventual external endpoint works. The API-key REST response
+envelope is `{ "success": true, "preview": { ... } }`; do not invent top-level preview fields.
 
 Example REST body:
 
@@ -124,12 +127,11 @@ Example REST body:
       "cameoplus": { "domains": ["ECONOMIC"], "subcategories": [] },
       "story": { "categories": ["cameoplus_economic", "cameoplus_infrastructure"] }
     },
-    "fatalities_only": false,
-    "collapse_duplicates": true
+    "fatalities_only": false
   },
   "trigger": { "type": "new_matches" },
   "schedule": { "cadence": "hourly", "timezone": "UTC", "daily_hour": 8 },
-  "delivery": { "email": true }
+  "delivery": { "email": false, "webhook_url": "${WEBHOOK_URL}" }
 }
 ```
 

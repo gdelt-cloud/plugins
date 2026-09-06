@@ -235,6 +235,12 @@ def main() -> int:
             path.name for path in skill_dir.iterdir()
             if path.is_dir() and (path / 'SKILL.md').exists()
         }
+        for skill_file in skill_dir.glob('*/SKILL.md'):
+            text = skill_file.read_text()
+            if 'collapse_duplicates' in text:
+                errs.append(
+                    f"{skill_file.relative_to(ROOT)}: retired collapse_duplicates parameter must not be taught"
+                )
         if plugin_name == 'gdelt-cloud' and actual_skills != EXPECTED_GDELT_SKILLS:
             errs.append(
                 f"{plugin_name}: shared skill set drifted; missing="
