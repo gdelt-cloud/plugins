@@ -7,7 +7,7 @@ description: Use this skill when a user wants GDELT Cloud to run a recurring hos
 
 Hosted Monitors run one structured Event/Story question on an hourly or daily schedule. They are
 organization-shared, scheduled checks consume no Query Units, and accepted on-demand Previews cost
-1 Query Unit. A Monitor reports **new coverage in its schedule window**; it is not a sentiment,
+1 Query Unit. A Monitor reports **new qualifying records since its previous successful checkpoint**; it is not a sentiment,
 risk-score, anomaly, or material-involvement claim.
 
 Use a Hosted Monitor when one canonical question can be expressed by its subject plus criteria. Use
@@ -86,17 +86,25 @@ Public v1 supports only `trigger: {"type":"new_matches"}`. Do not request `volum
 `material`, or entity `actor`; those are deferred compatibility values, not public write options.
 
 A query subject preserves an executed public request. Set `subject.type="query"`, an allowlisted
-`endpoint` (`/api/v2/events`, `/api/v2/stories`, `/api/v2/entities`, `/api/v2/activity`), `params`
-containing supported filters, and `window_days` (1–31). Do not combine query subjects with criteria
-filters. Preserve the executed lookup/request separately in `source_request`. Its fixed UTC dates
-become a rolling window; execution owns pagination and never reuses a discovery cursor. Confirm
-that conversion, cadence and delivery with the user as part of setup. Candidate identity lookup
-uses `/search`; `/entities` discovers identities appearing in reporting, and `/activity?entity=ID`
-reads reporting publications, list transitions and office changes for a selected identity.
+`endpoint` (`/api/v2/events`, `/api/v2/stories`, `/api/v2/entities`, `/api/v2/activity`), and `params`
+containing supported filters. Do not combine query subjects with criteria filters. Preserve the
+original request and its discovery dates separately in `source_request`; they are provenance,
+not scheduled matching bounds. Execution owns its cursor and never reuses a discovery page.
+
+Query Monitors match newly committed qualifying publications since the previous successful
+checkpoint, including late arrivals with older reporting or occurrence dates. Hourly or daily
+cadence controls execution and delivery. First enablement establishes the starting checkpoint
+without delivering historical preview matches. An interrupted run resumes its same interval and
+advances only after complete, deduplicated paging. Preview history never controls this interval.
+
+Resolve candidates with `/search`; `/entities` discovers identities appearing in reporting, and
+`/activity?entity=ID` reads reporting publications, list transitions and office changes for an
+identity. Public officials remain person entities: preserve the canonical ID and publisher office
+status, and do not interpret office jurisdiction as citizenship.
 
 ### 3. Preview before consuming a slot
 
-Preview never saves, enables, or sends email/webhooks. The optional body field `history_days: 30`
+Preview never saves, enables, or sends email/webhooks. The body field `history_days` accepts 7 (default) or 30 and
 returns a setup estimate with counts by type, active/quiet days, busiest day, representative evidence
 and notification batches at the selected cadence. Read the basis and completeness fields: old
 reporting dates are estimates of delivery activity, and missing history is not zero. Hourly estimates
@@ -301,3 +309,11 @@ Saving without scheduling: pass `enabled=false` to MCP `create_monitor` (REST bo
 For query-backed activity Monitors, read `evaluation.query_coverage`. Complete pagination of observed publication-journal records can notify even when `source_history_complete` is false. Explain the observed-publication scope; never describe it as exhaustive source intake. Failed or capped reads cannot establish completion. Historical estimates with partial source history cannot establish quiet days.
 
 For ongoing activity query Monitors, explicitly set `time_basis: "recorded"` in query params. Explain that dates now follow journal availability, including late arrivals; keep the original executed request in `source_request`. Omission preserves publication-date behavior. Do not silently reinterpret an existing publication-date Monitor. Retain publication, recorded, and source dates in evidence.
+
+## Access after trial
+
+The trial lasts seven days with one optional seven-day extension. After an expired Free trial,
+signed-in browsing still uses QU, including Atlas and Explore, but REST keys, OAuth/MCP,
+Monitor execution and exports require a subscription. Saved keys and Monitor configurations
+remain; execution pauses. Do not work around a subscription response using another transport,
+headers, or a scheduled client loop. Unknown entitlement status is a retryable service error.

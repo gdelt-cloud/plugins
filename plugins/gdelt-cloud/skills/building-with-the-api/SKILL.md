@@ -192,3 +192,18 @@ section 2's advice to end a comparison window yesterday matters more than any ve
 - [ ] Entity ids are resolved once and reused; no bare names crossing endpoints
 - [ ] 429 handling branches on `code`, not on the status
 - [ ] Response parsing tolerates unrecognised fields — new ones ship without notice (section 7)
+
+## Creation receipts and Monitor checkpoints
+
+`POST /api/v2/situations` accepts a Story or Event seed and requires `Idempotency-Key` for admitted
+work. Persist the key before sending, reuse it with the same body after timeout, and retain the
+returned canonical UID. Admitted work costs 5 QU; canonical reuse costs 0. Failed work releases
+its quota reservation. Event ambiguity is a 409 requiring explicit supporting Story selection.
+Do not infer successful completion from a connection drop or start another charged attempt.
+
+Query Monitors persist filters plus original discovery provenance. Scheduled matching is a
+half-open interval of newly committed publication evidence since the previous complete checkpoint,
+not a rolling reporting-date window. First enablement starts without delivering preview history;
+7/30-day previews are separate. Late arrivals retain their original occurrence/reporting dates.
+Continue incomplete pagination within the original interval, deduplicate by stable identity, and
+advance the checkpoint only after the whole interval has been processed.

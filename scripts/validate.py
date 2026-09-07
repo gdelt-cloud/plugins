@@ -237,6 +237,8 @@ def main() -> int:
         }
         for skill_file in skill_dir.glob('*/SKILL.md'):
             text = skill_file.read_text()
+            if skill_file.parent.name == 'hosted-monitors' and 'window_days' in text:
+                errs.append(f"{skill_file.relative_to(ROOT)}: query Monitors must use checkpoint intervals, not retired rolling configuration")
             if 'collapse_duplicates' in text:
                 errs.append(
                     f"{skill_file.relative_to(ROOT)}: retired collapse_duplicates parameter must not be taught"

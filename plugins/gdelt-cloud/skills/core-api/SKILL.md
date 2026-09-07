@@ -5,7 +5,7 @@ description: Use this skill for ANY request that touches GDELT Cloud data — ev
 
 # The Core API — which endpoint answers which question
 
-Eight surfaces cover almost everything. Pick by the **shape of the question**, not by keyword.
+These surfaces cover the common workflows. Pick by the **shape of the question**, not by keyword.
 
 | The user is asking | Endpoint | Returns |
 | --- | --- | --- |
@@ -13,6 +13,8 @@ Eight surfaces cover almost everything. Pick by the **shape of the question**, n
 | *How much / what shape?* | `GET /api/v2/events/summary` | Aggregated buckets — counts and metrics by date, country, category… |
 | *What is the coverage saying?* | `GET /api/v2/stories` | Deduplicated news clusters with their source articles |
 | *What are the themes?* | `GET /api/v2/stories/summary` | Story volume bucketed by date, country, category |
+| *Which country and its context?* | `GET /api/v2/countries` and `/countries/{ISO3}` | Canonical country directory, reporting/publication activity and dated reference context |
+| *Which developing thread?* | `GET /api/v2/situations` and `/situations/{uid}` | Maintained membership, dated evidence, graph samples and independent list totals |
 | *Who is involved?* | `GET /api/v2/entities` | Resolved people, organizations, places with windowed metrics |
 | *Where is the physical asset?* | `GET /api/v2/facilities` | Plants, mines, ports, pipelines, data centres — with coordinates |
 | *How is X being talked about?* | `GET /api/v2/entities/{entity_id}/tone` | Sentiment for one entity over time, with evidence |
@@ -20,7 +22,7 @@ Eight surfaces cover almost everything. Pick by the **shape of the question**, n
 
 ## One call, one Query Unit — page at 100
 
-Every call below costs 1 QU regardless of `limit`, so `limit=25` is four times the price of
+Standard reads cost 1 QU regardless of `limit`, so `limit=25` is four times the price of
 `limit=100` for the same data. Page at 100, and reach for a `/summary` endpoint before you count a
 list by walking it.
 
@@ -159,3 +161,45 @@ Never hardcode one from an example. Ask the `gdelt-cloud-docs` MCP server, or re
 Start identity lookup with `/api/v2/search?q=…&country_match=strict` (MCP `unified_entity_search`). Inspect the candidates and select the intended identity; never silently select an ambiguous first result. Reuse the returned entity ID in the relevant endpoint’s `entity=` parameter. `/api/v2/entities` discovers entities appearing in reporting within a date/geography/category scope; its legacy name search remains compatible.
 
 Strict country matching requires known source association. It does not equate office country, citizenship, headquarters or reporting location. Explicit `country_match=include_unknown` broadens to candidates without country evidence. Missing/failed coverage is unknown, not zero; withheld source keys are omitted. Facility candidates use `type=facility` and return `facility_id`, separate from owner identity and nearby Events.
+
+## Countries, public officials and Situations
+
+- `/api/v2/countries?directory=true&sort=name` enumerates the canonical ISO-3 registry, including
+  quiet countries. Use `q`, `country`, `region`, `continent`, `limit` and `offset` for directory
+  discovery; `sort=events` or `stories` is optional activity sorting. Country profiles and place
+  entity records are different resources; never manufacture an entity ID from an ISO code.
+- Country `basis=reporting` counts distinct Events by occurrence date and Stories by reporting
+  date. The default `basis=publication` preserves additions/updates; `time_basis` chooses published
+  or recorded time within that publication layer. Reporting has day precision, so do not request
+  hourly reporting counts. Country counts can overlap and do not sum to a global distinct total.
+- Country context exposes source availability. Keep economic units, observation periods and
+  vintages distinct from reporting dates. Office valid-time queries use a separately labeled
+  `as_of`; missing term dates do not establish a holder on that day.
+- Resolve a person through `/search?type=person&holds_office=true`. Public official is an
+  evidence-backed role, not an entity type. Reuse the person's canonical ID and existing entity
+  URLs. Office identity belongs to `/offices`; holder history is `/offices/{id}/holders` and
+  `/entities/{id}/offices`. Keep current, former/ended, unknown and unavailable distinct.
+  Publisher rosters have measured but incomplete source/country and identity coverage. Office
+  jurisdiction is not citizenship; an office badge is not a risk or screening assessment.
+- Situation discovery accepts `entity`, `story_id` and `event_uid`. Entity and geographic/category
+  filters need a reporting range of at most 30 days. `selected_scope` and `category_summaries`
+  describe that range; `totals` describe lifetime membership. Recent ordering uses evidence dates
+  and genuine first-observed timestamps, never settle freshness or lifetime article totals.
+- Page `/situations/{uid}/stories`, `/events`, `/entities` and `/connections` independently, retaining
+  dates and each list's `scope_version`. On scope-change 409, restart that list at offset 0.
+  Connections carry membership decisions and provenance; graph samples never limit list totals.
+- Public `/country/{ISO3}` and `/situations/{uid}` show immutable daily editions with cutoff and
+  publication time. Signed-in `/view/country/{ISO3}` and `/view/situations/{uid}` are live.
+
+**Creating a shared Situation is a write.** Inspect `create_situation`, then call
+`gdelt_cloud_tool_write` with a Story or Event seed and one stable `idempotency_key`. Explain the
+5 QU creation/expansion price before execution; paid subscribers and active trials qualify.
+Existing canonical membership is reused for 0 QU. An ambiguous Event returns supporting Stories:
+ask which Story to use instead of silently choosing one. Retain the same key and body across an
+uncertain retry; never issue a new key merely because the first call timed out. The API reserves
+and refunds quota; MCP does not add a separate read charge.
+
+Expired Free accounts keep signed-in browsing with QU after the trial and optional extension;
+programmatic REST/OAuth/MCP, Monitors and data exports require subscription. Preserve saved
+configurations and surface the subscription indicator. Never claim the trusted UI exemption from
+a customer request header or convert an access-service error into permission to proceed.

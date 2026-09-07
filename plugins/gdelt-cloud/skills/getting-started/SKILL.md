@@ -252,3 +252,18 @@ opposite responses — back off and retry versus stop and tell the user. The ful
 Ask the `gdelt-cloud-docs` MCP server. If the docs are wrong or missing something, its `submit_feedback`
 tool reaches a human. Do not guess a parameter name — the server rejects unknown filters into
 `applied_filters.ignored`, and a guess becomes a silent wrong answer rather than an error.
+
+## Explore and access
+
+Explore starts with Stories and also offers Events, Entities, Facilities and a searchable Countries
+directory. Atlas Today defaults to distinct coded Event activity for the current UTC day. Use
+reporting/publication labels and keep macro observation years and office as-of dates intact.
+Public officials are person entities distinguished by published office evidence, not a separate
+kind of person page. Countries and Situations have public frozen daily editions and live signed-in
+views. Open linked evidence in new tabs while retaining the selected dates and time basis.
+
+The seven-day trial has one optional seven-day extension. Expired Free accounts can continue
+signed-in browsing with QU, including Atlas, but customer REST keys, OAuth/MCP, Monitors and
+exports require a subscription. Keys and Monitor settings remain saved; execution pauses.
+Paid subscribers and active trials can create shared Situations for 5 QU; canonical reuse costs
+0 QU and retries reuse the original idempotency key. See the core API skill before this write.
