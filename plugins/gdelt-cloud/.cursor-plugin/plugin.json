@@ -1,6 +1,6 @@
 {
   "name": "gdelt-cloud",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure \u2014 plus shared skills for API integration, hosted monitoring and risk workflows.",
   "author": {
     "name": "GDELT Cloud",
@@ -30,7 +30,7 @@
       "GDELT_API_KEY": {
         "type": "string",
         "title": "GDELT Cloud API key",
-        "description": "Starts with gdelt_sk_. Create one free at https://gdeltcloud.com/api-keys \u2014 the free plan can read every dataset.",
+        "description": "Starts with gdelt_sk_. Create one free at https://gdeltcloud.com/api-keys \u2014 inspect current capabilities and limits for your plan.",
         "format": "password"
       }
     }

@@ -123,3 +123,10 @@ Academic plans, so check before designing around it, and read each month's settl
 than assuming a period is complete.
 
 **Language is a coverage lever, not a detail.** For any country whose press is not primarily English, pass `languages=` with its language codes. A series built from English-only coverage of a non-English country is measuring foreign attention to it, which is a different variable and moves for different reasons.
+
+
+### Low-count Atlas readings
+
+Keep official readings and Best Effort calculations in separate columns. An own_coverage GPR row may have `pulse=null`, `insufficient_data=true`, and a separate `best_effort` object. It is an unbanded daily calculation with low record count, not a calibrated trend or a substitute for world_corpus in quantitative work. Retain its count, coder, baseline and note, and display an asterisk. No observations means unavailable, never calm.
+
+Use `intelligence_posture` for annual country context. A structural-only headline has `posture.best_effort=true` and `axis_basis=structural_only`; retain `structural.indicators_present`, individual years and `reference_year`. The dynamic score stays null. Annual indicators are not today’s reporting, and `as_of` is not a point-in-time snapshot of annual inputs or normalization. Read the Atlas methodology through docs MCP before interpreting either value.

@@ -1,6 +1,6 @@
 {
   "name": "gdelt-cloud",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Coded global events, clustered news stories, resolved entities, physical assets, filings and government exposure — plus workflow skills for building, hosted monitoring, and geopolitical, financial and supply-chain risk.",
   "author": {
     "name": "GDELT Cloud",

@@ -27,14 +27,15 @@ list by walking it.
 ## Always start here
 
 ```
-GET /api/v2/search?q=<name>&type=<person|organization|place>&limit=10
+GET /api/v2/search?q=<name>&type=<person|organization|place|facility>&country_match=strict&limit=10
 ```
 
-Almost every interesting question is about a *thing* — a company, a country, a port. The canonical
-resolver uses only `q`, optional `type`, and `limit`, and returns terminal `e_…` candidates. Present
-ambiguity, select one, and reuse that id everywhere. Filtering by a bare name across two endpoints
-gets you two different entities and no error. This is the single most common way a first build goes
-silently wrong.
+Use this lexical candidate resolver (MCP `unified_entity_search`) for a company, person, place or
+facility. Its compact filters are `type`, `country`, and `holds_office`; use `country_match=strict`
+for known source country association. Inspect ambiguity and select the intended identity before
+reusing its returned ID in a destination endpoint that supports that identifier space. Entity IDs
+may be `e_…`, `wiki:…` or `llm:…`; facility candidates keep `facility_id`, separate from their owners.
+Unlinked source records have no entity ID. Missing or withheld evidence never establishes zero.
 
 ## The minimal correct call for each
 
@@ -64,17 +65,22 @@ GET /api/v2/stories/{story_id}/articles          # the actual sources
 `story_category` takes either spelling — `CONFLICT` or `conflict_security`, `CORPORATE` or
 `cameoplus_corporate`. Both resolve to the same filter.
 
-**Entities — who.** `search` resolves by name; the metrics are scoped to the window and to any
-filter you pass, and `metrics_scope` in the response tells you which.
+**Entity candidates — select the identity.** Use the lexical resolver below. `/api/v2/entities`
+separately discovers entities appearing in reporting within a date/geography/category scope;
+its `metrics_scope` describes those reporting metrics.
 
 ```
-GET /api/v2/entities?search=Chevron&type=organization&days=30
+GET /api/v2/search?q=Chevron&type=organization&country_match=strict
 ```
 
-**Facilities — the physical layer.** `has_geo=true` when you intend to map or bbox them.
+**Facilities — the physical layer.** `granularity=site` (default) returns physical sites;
+`granularity=unit` returns registry units. `has_geo=true` is useful for a map, but omitting unknown
+coordinates changes the inventory you can count. Country context `/api/v2/countries/{iso3}`
+reports site `facility_count` and separate `unit_count` by type. Publication activity counts added
+facility registry records, not newly built sites.
 
 ```
-GET /api/v2/facilities?country=Indonesia&type=coal_mine&has_geo=true&limit=100
+GET /api/v2/facilities?country=Indonesia&type=coal_mine&granularity=site&has_geo=true&limit=100
 ```
 
 **Tone — how an entity is being talked about.** Needs a resolved id and a date window. The series
@@ -147,3 +153,9 @@ from it was not applied. That one habit catches all six — and it is the only w
 Never hardcode one from an example. Ask the `gdelt-cloud-docs` MCP server, or read
 `/reference/enums` — every vocabulary is published and labelled **closed** (fixed), **observed**
 (what the corpus currently holds, never exhaustive) or **identifier** (discovered through a call).
+
+### Candidate identity and country evidence
+
+Start identity lookup with `/api/v2/search?q=…&country_match=strict` (MCP `unified_entity_search`). Inspect the candidates and select the intended identity; never silently select an ambiguous first result. Reuse the returned entity ID in the relevant endpoint’s `entity=` parameter. `/api/v2/entities` discovers entities appearing in reporting within a date/geography/category scope; its legacy name search remains compatible.
+
+Strict country matching requires known source association. It does not equate office country, citizenship, headquarters or reporting location. Explicit `country_match=include_unknown` broadens to candidates without country evidence. Missing/failed coverage is unknown, not zero; withheld source keys are omitted. Facility candidates use `type=facility` and return `facility_id`, separate from owner identity and nearby Events.

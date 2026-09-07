@@ -14,34 +14,43 @@ Read `gdelt-cloud-getting-started` first. Rule 2 is the whole game here.
 ## Resolve once, and record what you resolved
 
 ```
-GET /api/v2/search?q=<company name>&type=organization&limit=10
+GET /api/v2/search?q=<company name>&type=organization&country_match=strict&limit=10
 ```
 
-Returns candidates across every universe — news, Wikipedia, SEC/EDGAR, Global Energy Monitor,
-sanctions lists, China development finance — deduplicated to terminal spine `e_…` ids, with a
-per-source breakdown. `q`, optional `type`, and `limit` are the canonical public parameters. Present
-ambiguous candidates instead of automatically selecting the first row.
+The lexical resolver returns candidates across the source universes available to the request.
+Use `q`, optional `type`, `country`, `holds_office`, and `limit`; recommended examples send
+`country_match=strict`. Match explanations and country evidence help distinguish namesakes.
+Country association is not automatically headquarters, citizenship or reporting location.
 
-Keep the whole row, not just the id. It carries the `identifiers` map, which is how you cross into
-the other id spaces. **Ask the `gdelt-cloud-docs` MCP for the exact key names before you index into it** — they
-are not guessable, and a `KeyError` is better than a silent miss.
+Keep the whole selected row, including `identifiers` and source availability. Ask the
+`gdelt-cloud-docs` MCP for the identifier keys and accepted ID spaces of each destination endpoint.
+A missing key is unavailable evidence; do not manufacture a source ID or conclude zero exposure.
 
-Then assert once, loudly, and stop if it fails:
+Inspect candidates and make an explicit selection:
 
 ```python
-resolved = search["data"][0]
-# Canonical public search returns terminal ids only. Never carry an llm:, wiki:, GEM, CIK or bare
-# name forward as though it were the shared spine key.
-assert resolved.get("entity_id", "").startswith("e_"), resolved
+for candidate in search["data"]:
+    print(candidate.get("entity_id"), candidate.get("name"),
+          candidate.get("match_reason"), candidate.get("country_evidence"))
+selected_entity_id = input("Paste the entity_id of the intended candidate: ").strip()
+selected = [candidate for candidate in search["data"]
+            if candidate.get("entity_id") == selected_entity_id and selected_entity_id]
+if len(selected) != 1:
+    raise ValueError("Select exactly one returned entity candidate; keep ambiguity visible")
+(resolved,) = selected
 entity_id = resolved["entity_id"]
 ```
+
+Preserve `e_…`, `wiki:…` and `llm:…` identifiers exactly. Check each fan-out endpoint's accepted
+spaces; a source-specific leg may be unavailable for the selected identity. Facility candidates
+carry `facility_id` instead, and unlinked source records have no resolved entity ID.
 
 ## The fan-out, and what each leg actually accepts
 
 | Leg | Call | Identifier it wants |
 |---|---|---|
 | Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | use the selected terminal `e_…` id |
-| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | use the same terminal `e_…` id — **and read `entity_match`**, see below |
+| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | use the selected returned entity ID accepted by reporting — **and read `entity_match`**, see below |
 | Media tone | `GET /api/v2/entities/{entity_id}/tone` | **requires an explicit date window** |
 | Share of voice | `GET /api/v2/share-of-voice?entity=…&category=…` | an id in `entity` / `entity_id` / `entities`, **plus a denominator** — see below |
 | Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | use the terminal `e_…`; keep source-specific GEM ids separate |
@@ -51,9 +60,10 @@ entity_id = resolved["entity_id"]
 | Sanctions / screening exposure | `GET /api/v2/exposure?entity=…` or `?entity_search=<name>` | ids on `entity`; `entity_search` takes a plain name |
 | LEI record | `GET /api/v2/gleif/entities/{lei}` | LEI |
 
-Compatibility aliases accepted by an individual endpoint are not a reason to mix identifiers in a
-new workflow. Use the terminal `e_…` everywhere it is accepted, and branch to an identifier from
-the candidate's `identifiers` map only for a source-specific leg that requires it.
+Reuse the selected identity on every leg that supports its ID space. A leg requiring terminal
+`e_…`, CIK, LEI or GEM owner evidence must use a confirmed identifier from that candidate or report
+the leg unavailable. Never replace a selected news identity with an unrelated spine candidate just
+to satisfy a downstream filter.
 
 **Share of voice needs a denominator, and without one it 400s.** A share is meaningless without
 saying what it is a share *of*, so the numerator alone is refused with `DENOMINATOR_REQUIRED` —

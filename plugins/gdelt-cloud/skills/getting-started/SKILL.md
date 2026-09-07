@@ -81,18 +81,21 @@ jq '.paths."/api/v2/events".get.parameters[] | {name, description}' openapi-v2.j
 ## The twelve rules
 
 **1. Resolve an entity once, then reuse the id.**
-`GET /api/v2/search?q=<name>&type=<person|organization|place>&limit=10` is the resolver the rest of
-the API assumes you called. The canonical public call uses only `q`, optional `type`, and `limit`;
-its candidates carry terminal spine `e_…` ids. Present ambiguous candidates, pick one, and reuse
-that id. Never filter by a bare company or person name across more than one endpoint — you can get
-a different entity on each.
+`GET /api/v2/search?q=<name>&type=<person|organization|place|facility>&country_match=strict&limit=10`
+returns lexical identity candidates (MCP `unified_entity_search`). Refine with `country`, `type`,
+and `holds_office=true` for people with published office evidence. Strict country matching uses
+known source association; `country_match=include_unknown` explicitly broadens it.
+Inspect match explanations and country evidence, then select the intended candidate. Preserve its
+returned `entity_id` (`e_…`, `wiki:…` or `llm:…`) for endpoints that accept that identifier space.
+Facilities retain a separate `facility_id`; unlinked source records have no entity ID to reuse.
+Never select a candidate just because it ranks first or resolve the same bare name separately
+on several endpoints.
 
-**`entity` is the canonical spelling of that parameter, everywhere.** Older aliases (`entity_id`,
-and `entities` where an endpoint takes several) are still accepted and still documented per
-endpoint, but `entity` is the name to write in new code and the name `applied_filters` echoes
-back. Where an endpoint accepts more than one id at once it says so in its parameter list —
-`/reference/parameters#identifier-parameters` is the table, and it is the only place that is
-current.
+**Use the destination endpoint's documented identifier parameter.** `entity` is the recommended
+spelling on the reporting and record endpoints that declare it. Some aggregate contracts use a
+plural canonical parameter: `/share-of-voice` declares `entities`, with singular compatibility
+aliases. Read `/reference/parameters#identifier-parameters` and `applied_filters` rather than
+assuming a parameter or a multi-ID format transfers unchanged to another endpoint.
 
 **2. Identifier spaces are not interchangeable, and the wrong one returns an empty 200.**
 A spine `e_…` id, a news `wiki:…` id, a GEM entity id, a CIK, an LEI and a SAM.gov UEI are
@@ -102,9 +105,10 @@ alone. `/gov/awards` also takes `cik:` and rejects bare names. `/exposure` also 
 spelling for a spine alias. Check the identifier table in
 `/reference/parameters#identifier-parameters` before chaining two endpoints.
 
-For a new cross-surface workflow, the terminal `e_…` returned by the canonical `/search` call is
-the default join key. Reach for a source-specific identifier only when that endpoint explicitly
-requires one, such as a CIK for filings or a GEM owner id for the energy-owner registry.
+Reuse the exact selected identifier for each endpoint that documents support for its space.
+A returned terminal `e_…` is useful across many sources, but never invent one for a `wiki:…` or
+`llm:…` candidate. A source-specific leg may require a CIK, GEM owner ID or LEI; use its documented
+identifier from the candidate evidence, or mark that leg unavailable.
 
 **3. A `/summary` endpoint is close to its list sibling, but not identical.**
 Count before you list. `/events/summary` takes most of the list's filters — `days`, `date`,
