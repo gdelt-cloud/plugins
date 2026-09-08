@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-getting-started
-description: Use this skill whenever the user mentions GDELT Cloud at all — before the first API call in a project, and whenever they describe anything they want to build, monitor, chart, count or answer using events, stories, summaries, entities, facilities, tone or share of voice. It carries the orientation and the conventions that decide whether a call is correct, because almost every filter that is wrong in an interesting way returns HTTP 200 with the wrong data rather than an error. Pair it with gdelt-cloud-core-api, which maps the ask onto an endpoint.
+description: Use this skill whenever the user mentions GDELT Cloud at all — before the first API call in a project, and whenever they describe anything they want to build, monitor, chart, count or answer using events, stories, summaries, entities, Situations, country context and the Countries directory, publication activity, public office-holders, facilities, tone or share of voice. It carries the orientation and the conventions that decide whether a call is correct, because almost every filter that is wrong in an interesting way returns HTTP 200 with the wrong data rather than an error. Pair it with gdelt-cloud-core-api, which maps the ask onto an endpoint, including the trial and what a Free account keeps after it.
 ---
 
 # Building on GDELT Cloud — read this before your first call
@@ -66,7 +66,7 @@ Follow them and your first build will be correct; skip them and it will look cor
 ```
 Base URL   https://gdeltcloud.com/api/v2
 Auth       Authorization: Bearer gdelt_sk_...
-Keys       https://gdeltcloud.com/api-keys   (free plan reads every dataset)
+Keys       https://gdeltcloud.com/api-keys   (7-day evaluation: 1,000 QU, every dataset over the API and MCP)
 ```
 
 Two MCP servers are wired by this plugin. `gdelt-cloud` is the data; `gdelt-cloud-docs` is the
@@ -262,8 +262,11 @@ Public officials are person entities distinguished by published office evidence,
 kind of person page. Countries and Situations have public frozen daily editions and live signed-in
 views. Open linked evidence in new tabs while retaining the selected dates and time basis.
 
-The seven-day trial has one optional seven-day extension. Expired Free accounts can continue
-signed-in browsing with QU, including Atlas, but customer REST keys, OAuth/MCP, Monitors and
-exports require a subscription. Keys and Monitor settings remain saved; execution pauses.
+A new account starts a 7-day evaluation with 1,000 QU and every dataset over the API and MCP, with
+one optional 7-day extension on request. Afterwards the Free plan continues in the web app with
+50 QU a month, including Atlas, but customer REST keys, OAuth/MCP, Monitor execution and exports
+pause until you subscribe. Keys and Monitor settings remain saved. Every Free account can claim a
+one-time 500 QU grant, valid 7 days from activation, announced by email — so a key that answers
+`403 PROGRAMMATIC_ACCESS_DENIED` after the evaluation is a plan state, not a broken key.
 Paid subscribers and active trials can create shared Situations for 5 QU; canonical reuse costs
 0 QU and retries reuse the original idempotency key. See the core API skill before this write.

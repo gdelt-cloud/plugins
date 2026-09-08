@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-core-api
-description: Use this skill for ANY request that touches GDELT Cloud data — events, stories, summaries, entities, facilities, tone, or share of voice — whenever the user describes something they want to build, monitor, chart, count, or answer with it, and the request does not obviously belong to one of the narrower workflow skills. It maps a plain-English ask onto the right endpoint and the minimal correct call, so the first attempt returns real data instead of an empty 200.
+description: Use this skill for ANY request that touches GDELT Cloud data — events, stories, summaries, entities, Situations (maintained collections of Stories and coded Events around one occurrence), country context and the Countries directory, publication activity, public office-holders, facilities, tone or share of voice — whenever the user describes something they want to build, monitor, chart, count or answer with it and it does not obviously belong to a narrower workflow skill. It maps a plain-English ask onto the right endpoint and the minimal correct call, including identity resolution before any destination call, so the first attempt returns real data instead of an empty 200.
 ---
 
 # The Core API — which endpoint answers which question

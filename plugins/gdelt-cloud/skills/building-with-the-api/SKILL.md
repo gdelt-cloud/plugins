@@ -207,3 +207,153 @@ not a rolling reporting-date window. First enablement starts without delivering 
 7/30-day previews are separate. Late arrivals retain their original occurrence/reporting dates.
 Continue incomplete pagination within the original interval, deduplicate by stable identity, and
 advance the checkpoint only after the whole interval has been processed.
+
+## Build anything: first principles
+
+The four sections below are the rules that hold across EVERY endpoint, so a build that the skills
+above do not describe can still be derived correctly. Each one is a place a plausible HTTP 200 hides.
+
+**Served, not raw.** Every read answers from settled serving tables, and the response says which
+(`meta.row_source`, `meta.settled_at`, and on the activity journal `meta.coverage.window_complete`
+plus `meta.exhaustive`). A `null` is *unmeasured* — an unknown `linked_event_count`, a withheld
+source count, a country with no returned row — and is never a zero. Read the coverage block before
+counting anything, and render a null as a gap.
+
+**Three clocks.** A Story carries a *reporting* date (when coverage was assembled), an Event carries
+an *occurrence* date (when the thing happened), and the publication journal carries *published*,
+*recorded* and *source* dates (when a record entered our serving layer, versus what it says about
+itself). Pick the clock explicitly — `time_basis=recorded` on `/api/v2/activity` for "what arrived
+since my last check", occurrence dates on Events for "what happened that week" — and say which one a
+number is measured on. A Situation's `origin` is the earliest member with material coverage, not the
+true beginning.
+
+**Resolve before you discover.** Every destination endpoint that takes `entity` wants the id that
+`GET /api/v2/search?q=<name>&country_match=strict` returned, after you inspected the candidates
+and chose one. Reuse that id across Events, Stories, Situations, activity and offices; never let a
+bare name cross an endpoint boundary, and never take the first candidate by position.
+
+**Budget in Query Units.** One read is 1 QU whatever `limit` you pass; admitted Situation creation
+is 5 QU and reusing an existing one is 0; Monitor runs are 0. So count before you list (`/summary`
+endpoints, `include_total=true` on the first page only), page at the maximum `limit`, and read
+`GET /api/v2/meta/query-units` for your position rather than guessing it.
+
+**Two paging shapes.** Events, Stories and the activity journal are keyset-paged: copy `next_cursor`
+verbatim and keep every filter identical between pages. Situation member lists are offset-paged
+under a `scope_version`: send the version from page one on every later page, and treat a `409` as
+"the collection changed — restart at offset 0". `has_more` is measured on both; row count is not.
+
+**Honest unknowns.** `applied_filters.ignored` names what the server did not apply; `caps` and
+`truncated` say when an array is bounded; a withheld section is not an empty one; and every coverage
+statement is dated. Carry those fields into whatever you build, or the build will claim more than
+the API did.
+
+## Four worked builds
+
+Each is the minimal call list. `{braces}` in a path and `<angle brackets>` in a value are
+placeholders filled from the previous step; `$GDELT_API_KEY` is the bearer token.
+
+### 1. A query Monitor
+
+Keep an executed activity request as a scheduled check, saved paused, then enabled on purpose.
+
+```bash
+# 1. resolve the subject and choose the candidate yourself
+curl -G "https://gdeltcloud.com/api/v2/search" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "q=<name>" --data-urlencode "country_match=strict"
+
+# 2. preview the standing question (1 QU, never delivers)
+curl -X POST "https://gdeltcloud.com/api/v2/monitors/preview" -H "Authorization: Bearer $GDELT_API_KEY" \
+  -H "Content-Type: application/json" -d '{
+    "name": "Publication activity: <name>",
+    "subject": { "type": "query", "endpoint": "/api/v2/activity",
+                 "params": { "entity": "<entity_id>", "time_basis": "recorded" } },
+    "trigger": { "type": "new_matches" },
+    "schedule": { "cadence": "daily", "timezone": "UTC", "daily_hour": 8 },
+    "delivery": { "email": true }
+  }'
+
+# 3. create it saved-but-paused; 4. enable it when the user says so
+curl -X POST "https://gdeltcloud.com/api/v2/monitors" ... -d '{ ...same body..., "enabled": false }'
+curl -X PATCH "https://gdeltcloud.com/api/v2/monitors/{id}" ... -d '{ "enabled": true }'
+```
+
+Read `evaluation.query_coverage` on the preview before promising anything: complete paging of the
+observed journal can notify, but it is not exhaustive source intake.
+
+### 2. A country brief
+
+Four reads, one ISO-3 code, every number labelled with its clock.
+
+```bash
+curl -G "https://gdeltcloud.com/api/v2/countries/{iso3}" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "basis=reporting" --data-urlencode "date_start=<yyyy-mm-dd>" --data-urlencode "date_end=<yyyy-mm-dd>"
+curl -G "https://gdeltcloud.com/api/v2/situations" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "country=<iso3>" --data-urlencode "date_start=<yyyy-mm-dd>" --data-urlencode "date_end=<yyyy-mm-dd>"
+curl -G "https://gdeltcloud.com/api/v2/offices" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "country=<iso3>" --data-urlencode "as_of=<yyyy-mm-dd>"
+curl -G "https://gdeltcloud.com/api/v2/facilities" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "country=<iso3>" --data-urlencode "granularity=site"
+```
+
+`basis=reporting` counts distinct served Events by occurrence date and location country; the default
+`publication` basis keeps the journal clock. The Situations filter needs both date bounds (at most 30
+days) and means *coded Event location*, not actor nationality. `as_of` on offices is valid time — who
+held the office on that date by the publisher's dates. Facility totals are registry records; label
+them as sites or units, never as construction.
+
+### 3. A Situation tracker
+
+Find the maintained Situation for an entity, then walk its Stories and Events independently.
+
+```bash
+curl -G "https://gdeltcloud.com/api/v2/situations" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "entity=<entity_id>" --data-urlencode "date_start=<yyyy-mm-dd>" --data-urlencode "date_end=<yyyy-mm-dd>"
+curl -G "https://gdeltcloud.com/api/v2/situations/{situation_uid}" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "include=edges" --data-urlencode "limit=25"
+```
+
+```python
+def walk_members(client, uid, kind, cap=2000):
+    """kind is 'stories' or 'events'. Restart on 409: the collection changed under you."""
+    while True:
+        rows, offset, version = [], 0, None
+        while True:
+            params = {"limit": 100, "offset": offset, **({"scope_version": version} if version else {})}
+            path = f"/api/v2/situations/{uid}/stories" if kind == "stories" else f"/api/v2/situations/{uid}/events"
+            r = client.get(path, params=params)
+            if r.status_code == 409:
+                break                     # scope changed: discard rows and start again
+            page = r.json()
+            version = version or page["scope"]["version"]
+            rows += page["data"]
+            if not page["pagination"]["has_more"] or len(rows) >= cap:
+                return rows, version
+            offset += len(page["data"])
+```
+
+Save the whole response you used — `meta`, `applied_filters`, `caps`, the version — because the
+service does not reconstruct earlier editions on demand. Read `meta.situation_source`: `curated` is
+stored membership; `walked` is an exploratory neighbourhood and not a Situation.
+
+### 4. An entity dossier
+
+Resolve once, then read every surface with the same id.
+
+```bash
+curl -G "https://gdeltcloud.com/api/v2/search" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "q=<name>" --data-urlencode "country_match=strict"
+curl "https://gdeltcloud.com/api/v2/entities/{entity_id}" -H "Authorization: Bearer $GDELT_API_KEY"
+curl -G "https://gdeltcloud.com/api/v2/entities/{entity_id}/offices" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "as_of=<yyyy-mm-dd>"
+curl -G "https://gdeltcloud.com/api/v2/activity" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "entity=<entity_id>" --data-urlencode "time_basis=recorded" \
+  --data-urlencode "recorded_start=<iso-utc>" --data-urlencode "recorded_end=<iso-utc>"
+curl -G "https://gdeltcloud.com/api/v2/stories" -H "Authorization: Bearer $GDELT_API_KEY" \
+  --data-urlencode "entity=<entity_id>" --data-urlencode "date_start=<yyyy-mm-dd>" \
+  --data-urlencode "date_end=<yyyy-mm-dd>" --data-urlencode "limit=100"
+```
+
+Offices, activity and Stories answer different questions — an office held, a record that arrived, a
+cluster of coverage — so keep each in its own section with its own clock. A withheld offices section
+is an entitlement, not evidence that the person holds none; an empty activity window with
+`meta.coverage.window_complete=false` is an initialised journal, not a quiet entity.

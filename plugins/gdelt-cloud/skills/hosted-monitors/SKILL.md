@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-hosted-monitors
-description: Use this skill when a user wants GDELT Cloud to run a recurring hosted Monitor, alert on new Event or Story matches, manage a Monitor through REST or MCP, receive signed webhooks, or inspect and replay Monitor runs. It covers the supported resolve → preview → create → inspect → replay workflow. Do not use it for a one-off query, a Monitoring Brief, a historical risk index, or composite logic that requires several API calls and custom state.
+description: Use this skill when a user wants GDELT Cloud to run a recurring hosted Monitor: alert on new Event or Story matches, keep an executed Events/Stories/Entities/Activity query as a scheduled query Monitor (checkpointed, late arrivals included, time_basis=recorded for publication activity — a country's journal, an entity's coverage, office-holder record changes), manage a Monitor through REST or MCP, receive signed webhooks, or inspect and replay runs. It covers resolve → preview → create → inspect → replay, and says how to watch a Situation (through its member Stories or Events — Situations, Countries and offices are not Monitor subjects themselves). Do not use it for a one-off query, a Monitoring Brief, a historical risk index, or composite logic needing several calls and custom state.
 ---
 
 # Hosted Monitors
@@ -90,6 +90,13 @@ A query subject preserves an executed public request. Set `subject.type="query"`
 containing supported filters. Do not combine query subjects with criteria filters. Preserve the
 original request and its discovery dates separately in `source_request`; they are provenance,
 not scheduled matching bounds. Execution owns its cursor and never reuses a discovery page.
+
+Situations, Countries and offices are not Monitor subjects. To watch a Situation, monitor what
+feeds it: an `entity` subject over its cast, or a query subject over `/api/v2/stories` or
+`/api/v2/events` carrying the same filters the Situation's discovery used. To watch a country's
+publication activity or office-holder record changes, use a query subject over `/api/v2/activity`
+with `time_basis=recorded` (and `kind=office_holder` for the roster). Say so when asked to "monitor
+this Situation" — the Situation itself re-adjudicates hourly and is read, not subscribed to.
 
 Query Monitors match newly committed qualifying publications since the previous successful
 checkpoint, including late arrivals with older reporting or occurrence dates. Hourly or daily
