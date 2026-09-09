@@ -311,7 +311,7 @@ Unknown publication history cannot establish quiet days. Preview-only `history_d
 setup history and cadence estimates; remove it before creating a Monitor and choose delivery
 explicitly. Inspect `executed_requests` and `setup_executed_requests` for the exact reads.
 
-Saving without scheduling: pass `enabled=false` to MCP `create_monitor` (REST body `enabled: false`). Inspect the saved Monitor, then explicitly enable with `set_monitor_enabled` only when requested. Omission retains automatic activation when a running slot is available. Preview never saves or delivers.
+Saving without scheduling: pass `enabled=false` to MCP `create_monitor` (REST body `enabled: false`). Inspect the saved Monitor, then explicitly enable with `set_monitor_enabled` only when requested. MCP query subjects default to paused when `enabled` is omitted; legacy subjects can activate automatically when a running slot is available. Preview never saves or delivers.
 
 For query-backed activity Monitors, read `evaluation.query_coverage`. Complete pagination of observed publication-journal records can notify even when `source_history_complete` is false. Explain the observed-publication scope; never describe it as exhaustive source intake. Failed or capped reads cannot establish completion. Historical estimates with partial source history cannot establish quiet days.
 

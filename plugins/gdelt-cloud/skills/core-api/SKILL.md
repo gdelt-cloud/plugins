@@ -188,6 +188,13 @@ Strict country matching requires known source association. It does not equate of
 - Page `/situations/{uid}/stories`, `/events`, `/entities` and `/connections` independently, retaining
   dates and each list's `scope_version`. On scope-change 409, restart that list at offset 0.
   Connections carry membership decisions and provenance; graph samples never limit list totals.
+  For a drawable detail graph, request `include=edges` (MCP `get_situation` takes
+  `include=["edges"]`). Edges can reference Stories outside the current detail page; page
+  member Stories before drawing those nodes and inspect graph caps. Connections explain
+  membership decisions, whereas detail edges describe pairwise graph relationships.
+  MCP Situation member-list tools currently take `story_id` for a Situation UID (not
+  `situation_uid`) and a maximum page limit of 100. Read the current schema and page;
+  do not invent aliases or request oversized pages.
 - Public `/country/{ISO3}` and `/situations/{uid}` show immutable daily editions with cutoff and
   publication time. Signed-in `/view/country/{ISO3}` and `/view/situations/{uid}` are live.
 
