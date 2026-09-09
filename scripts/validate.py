@@ -41,6 +41,98 @@ EXPECTED_GDELT_SKILLS = {
     'war-risk-underwriting',
 }
 
+# ★ THE FREE TIER STOPPED READING THE API ON 2026-09-08, AND THIS README SAID OTHERWISE.
+# "the free plan reads every dataset" was true when written and became a false promise the night
+# the programmatic cutoff shipped. The monorepo pins the numbers in one leaf
+# (nextjs_/lib/evaluation-constants.ts + lib/access/free-programmatic-cutoff.ts) and its
+# tests/marketing/free-plan-copy.test.ts asserts the SAME tokens here when this repo is checked out
+# beside it — so the two repos cannot disagree silently. Change a number there first.
+FORBIDDEN_CLAIMS = [
+    re.compile(r'free plan (can )?reads? every dataset', re.I),
+    re.compile(r'including the free tier', re.I),
+]
+FREE_PLAN_TOKENS = ('1,000 QU', '50 QU', '500 QU')
+FREE_PLAN_TOKEN_FILES = ('README.md', 'plugins/gdelt-cloud/skills/getting-started/SKILL.md')
+CLAIM_SCANNED_MANIFESTS = (
+    '.claude-plugin/marketplace.json',
+    '.agents/plugins/marketplace.json',
+    '.cursor-plugin/marketplace.json',
+)
+
+# The frontmatter `description:` is the ONLY thing the model triggers on. A skill that answers
+# Situations, country context, publication activity and office-holders but does not SAY so in
+# that one line is never selected for those asks, however good its body is.
+DESCRIPTION_KEYWORDS = {
+    'core-api': ('Situation', 'Countr', 'activity', 'office'),
+    'hosted-monitors': ('Situation', 'Countr', 'activity', 'office', 'query'),
+    'getting-started': ('Situation', 'Countr', 'activity', 'office'),
+}
+
+# building-with-the-api carries the build-anything section (a section, not a ninth skill — a new
+# skill would move EXPECTED_GDELT_SKILLS, the "eight skills" count and three manifests).
+BUILD_ANYTHING_HEADINGS = (
+    '## Build anything: first principles',
+    '## Four worked builds',
+    '### 1. A query Monitor',
+    '### 2. A country brief',
+    '### 3. A Situation tracker',
+    '### 4. An entity dossier',
+)
+
+
+def frontmatter_description(text):
+    parts = text.split('---')
+    if len(parts) < 3:
+        return ''
+    for line in parts[1].splitlines():
+        if line.startswith('description:'):
+            return line[len('description:'):].strip()
+    return ''
+
+
+def check_customer_copy():
+    scanned = [ROOT / 'README.md']
+    scanned += [ROOT / m for m in CLAIM_SCANNED_MANIFESTS]
+    for d in sorted((ROOT / 'plugins').iterdir()):
+        if not d.is_dir():
+            continue
+        for client in ('.claude-plugin', '.codex-plugin', '.cursor-plugin'):
+            scanned.append(d / client / 'plugin.json')
+        scanned += sorted(d.glob('skills/*/SKILL.md'))
+    for f in scanned:
+        if not f.exists():
+            continue
+        text = f.read_text()
+        for pattern in FORBIDDEN_CLAIMS:
+            m = pattern.search(text)
+            if m:
+                errs.append(f"{f.relative_to(ROOT)}: forbidden claim {m.group(0)!r} — the Free tier "
+                            f"no longer reads the API after the evaluation")
+    for rel in FREE_PLAN_TOKEN_FILES:
+        f = ROOT / rel
+        if not f.exists():
+            errs.append(f"{rel}: missing, so the Free-plan numbers are not stated")
+            continue
+        text = f.read_text()
+        for token in FREE_PLAN_TOKENS:
+            if token not in text:
+                errs.append(f"{rel}: must state {token!r} (pinned by the monorepo constants)")
+    skills = ROOT / 'plugins' / 'gdelt-cloud' / 'skills'
+    for skill, keywords in DESCRIPTION_KEYWORDS.items():
+        f = skills / skill / 'SKILL.md'
+        if not f.exists():
+            continue
+        desc = frontmatter_description(f.read_text())
+        for kw in keywords:
+            if kw not in desc:
+                errs.append(f"{f.relative_to(ROOT)}: frontmatter description must mention {kw!r}")
+    build = skills / 'building-with-the-api' / 'SKILL.md'
+    if build.exists():
+        text = build.read_text()
+        for heading in BUILD_ANYTHING_HEADINGS:
+            if heading not in text:
+                errs.append(f"{build.relative_to(ROOT)}: missing heading {heading!r}")
+
 
 def load(p):
     try:
@@ -237,6 +329,8 @@ def main() -> int:
         }
         for skill_file in skill_dir.glob('*/SKILL.md'):
             text = skill_file.read_text()
+            if skill_file.parent.name == 'hosted-monitors' and 'window_days' in text:
+                errs.append(f"{skill_file.relative_to(ROOT)}: query Monitors must use checkpoint intervals, not retired rolling configuration")
             if 'collapse_duplicates' in text:
                 errs.append(
                     f"{skill_file.relative_to(ROOT)}: retired collapse_duplicates parameter must not be taught"
@@ -247,6 +341,8 @@ def main() -> int:
                 f"{sorted(EXPECTED_GDELT_SKILLS - actual_skills)}, extra="
                 f"{sorted(actual_skills - EXPECTED_GDELT_SKILLS)}"
             )
+
+    check_customer_copy()
 
     for e in errs:
         print(f"ERROR: {e}")

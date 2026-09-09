@@ -17,7 +17,7 @@
     "gdelt_api_key": {
       "type": "string",
       "title": "GDELT Cloud API key",
-      "description": "Starts with gdelt_sk_. Create one free at https://gdeltcloud.com/api-keys — the free plan can read every dataset.",
+      "description": "Starts with gdelt_sk_. Create one free at https://gdeltcloud.com/api-keys — inspect current capabilities and limits for your plan.",
       "sensitive": true,
       "required": true
     }

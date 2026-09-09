@@ -1,13 +1,13 @@
 ---
 name: gdelt-cloud-hosted-monitors
-description: Use this skill when a user wants GDELT Cloud to run a recurring hosted Monitor, alert on new Event or Story matches, manage a Monitor through REST or MCP, receive signed webhooks, or inspect and replay Monitor runs. It covers the supported resolve → preview → create → inspect → replay workflow. Do not use it for a one-off query, a Monitoring Brief, a historical risk index, or composite logic that requires several API calls and custom state.
+description: Use this skill when a user wants GDELT Cloud to run a recurring hosted Monitor: alert on new Event or Story matches, keep an executed Events/Stories/Entities/Activity query as a scheduled query Monitor (checkpointed, late arrivals included, time_basis=recorded for publication activity — a country's journal, an entity's coverage, office-holder record changes), manage a Monitor through REST or MCP, receive signed webhooks, or inspect and replay runs. It covers resolve → preview → create → inspect → replay, and says how to watch a Situation (through its member Stories or Events — Situations, Countries and offices are not Monitor subjects themselves). Do not use it for a one-off query, a Monitoring Brief, a historical risk index, or composite logic needing several calls and custom state.
 ---
 
 # Hosted Monitors
 
 Hosted Monitors run one structured Event/Story question on an hourly or daily schedule. They are
 organization-shared, scheduled checks consume no Query Units, and accepted on-demand Previews cost
-1 Query Unit. A Monitor reports **new coverage in its schedule window**; it is not a sentiment,
+1 Query Unit. A Monitor reports **new qualifying records since its previous successful checkpoint**; it is not a sentiment,
 risk-score, anomaly, or material-involvement claim.
 
 Use a Hosted Monitor when one canonical question can be expressed by its subject plus criteria. Use
@@ -22,13 +22,19 @@ memo and is a separate product.
 For a person, organization, or place, call the public resolver:
 
 ```http
-GET /api/v2/search?q=ASML&type=organization&limit=10
+GET /api/v2/search?q=ASML&type=organization&country_match=strict&limit=10
 ```
 
-The canonical public call accepts only `q`, optional `type`, and `limit`. It returns ranked
-candidates whose `entity_id` is a terminal spine `e_…` id. Present ambiguous candidates with their
-name, type, country, match reason, sources, and identifiers; do not choose a weak match silently.
-Store the selected terminal ids and pass them unchanged to the Monitor.
+The canonical candidate resolver is lexical. Use `q`, optional `type`, `country`, and
+`holds_office=true` for politicians with published office evidence. Send `country_match=strict`;
+`include_unknown` is an explicit broadening option. Country association does not interchangeably
+mean citizenship, headquarters or reporting location. Source-universe selection is advanced.
+
+Present candidates with name, type, match explanation, country evidence, sources and identifiers.
+Keep ambiguity visible. Use the returned `entity_id` unchanged: `e_…`, `wiki:…` and `llm:…` are
+supported. A facility uses `facility_id`; an unlinked source record has no entity ID. Never mint one.
+`coverage_30d=0` means quiet in that measured window; null/failed coverage is unknown. Neither
+predicts whether future reporting will match.
 
 The MCP server uses progressive discovery. Inspect the underlying schema, then call it:
 
@@ -36,7 +42,7 @@ The MCP server uses progressive discovery. Inspect the underlying schema, then c
 gdelt_cloud_tool_get(tool_name="unified_entity_search")
 gdelt_cloud_tool_call(
   tool_name="unified_entity_search",
-  tool_arguments={"q":"ASML", "type":"organization", "limit":10}
+  tool_arguments={"q":"ASML", "type":"organization", "country_match":"strict", "limit":10}
 )
 ```
 
@@ -47,7 +53,7 @@ surface, while `unified_entity_search` is the cross-source resolver of record.
 
 Choose exactly one subject:
 
-- `entity`: 1–25 confirmed terminal `e_…` ids; public v1 supports `match: "coverage"` only.
+- `entity`: 1–25 selected `e_…`, `wiki:…` or `llm:…` ids; the public API supports `match: "coverage"` only.
 - `facility`: one canonical `f_…` or `s_…` facility id plus a radius.
 - `place`: latitude, longitude, and radius.
 - `geography`: countries, region, or continent; `admin1` requires exactly one country.
@@ -57,7 +63,7 @@ Entity coverage means a resolved entity appears in the Story coverage. A linked 
 prove that entity acted in or was materially affected by the Event. Investigate after a trigger
 before making that claim.
 
-Criteria select `events`, `stories`, or `events_and_stories`. Keep taxonomy values in their family:
+New criteria select one lane: `events` or `stories`. Existing `events_and_stories` specifications remain compatible. Keep taxonomy values in their family:
 
 ```json
 {
@@ -79,7 +85,38 @@ public Monitor option; the service evaluates its adjudicated incident view autom
 Public v1 supports only `trigger: {"type":"new_matches"}`. Do not request `volume_spike`, entity
 `material`, or entity `actor`; those are deferred compatibility values, not public write options.
 
+A query subject preserves an executed public request. Set `subject.type="query"`, an allowlisted
+`endpoint` (`/api/v2/events`, `/api/v2/stories`, `/api/v2/entities`, `/api/v2/activity`), and `params`
+containing supported filters. Do not combine query subjects with criteria filters. Preserve the
+original request and its discovery dates separately in `source_request`; they are provenance,
+not scheduled matching bounds. Execution owns its cursor and never reuses a discovery page.
+
+Situations, Countries and offices are not Monitor subjects. To watch a Situation, monitor what
+feeds it: an `entity` subject over its cast, or a query subject over `/api/v2/stories` or
+`/api/v2/events` carrying the same filters the Situation's discovery used. To watch a country's
+publication activity or office-holder record changes, use a query subject over `/api/v2/activity`
+with `time_basis=recorded` (and `kind=office_holder` for the roster). Say so when asked to "monitor
+this Situation" — the Situation itself re-adjudicates hourly and is read, not subscribed to.
+
+Query Monitors match newly committed qualifying publications since the previous successful
+checkpoint, including late arrivals with older reporting or occurrence dates. Hourly or daily
+cadence controls execution and delivery. First enablement establishes the starting checkpoint
+without delivering historical preview matches. An interrupted run resumes its same interval and
+advances only after complete, deduplicated paging. Preview history never controls this interval.
+
+Resolve candidates with `/search`; `/entities` discovers identities appearing in reporting, and
+`/activity?entity=ID` reads reporting publications, list transitions and office changes for an
+identity. Public officials remain person entities: preserve the canonical ID and publisher office
+status, and do not interpret office jurisdiction as citizenship.
+
 ### 3. Preview before consuming a slot
+
+Preview never saves, enables, or sends email/webhooks. The body field `history_days` accepts 7 (default) or 30 and
+returns a setup estimate with counts by type, active/quiet days, busiest day, representative evidence
+and notification batches at the selected cadence. Read the basis and completeness fields: old
+reporting dates are estimates of delivery activity, and missing history is not zero. Hourly estimates
+from date-only evidence are ranges. Exact query receipts appear in `executed_requests` and
+`setup_executed_requests`; copy them to reproduce the result.
 
 REST:
 
@@ -252,3 +289,38 @@ application side effect. Retries keep the event id and body stable while timesta
   deduplication is handled.
 - Scheduled execution costs 0 QU; Preview costs 1 QU; replay and follow-up API calls use their
   normal Query Units.
+
+### Candidate identity and country evidence
+
+Start identity lookup with `/api/v2/search?q=…&country_match=strict` (MCP `unified_entity_search`). Inspect the candidates and select the intended identity; never silently select an ambiguous first result. Reuse the returned entity ID in the relevant endpoint’s `entity=` parameter. `/api/v2/entities` discovers entities appearing in reporting within a date/geography/category scope; its legacy name search remains compatible.
+
+Strict country matching requires known source association. It does not equate office country, citizenship, headquarters or reporting location. Explicit `country_match=include_unknown` broadens to candidates without country evidence. Missing/failed coverage is unknown, not zero; withheld source keys are omitted. Facility candidates use `type=facility` and return `facility_id`, separate from owner identity and nearby Events.
+
+### Query-backed topic matching
+
+For `subject_type=query` topic Monitors, use explicit `query_params.search_mode="lexical"`
+when the user intends a literal phrase. Events match served titles/summaries; Stories match served
+titles, case-insensitively, before pagination. Default semantic search is a bounded discovery
+pool; exhausting its cursors does not establish all matches. Query scheduling refuses bounded
+retrieval rather than storing a misleading complete checkpoint. Do not silently change a
+semantic request to lexical: explain the meaning change and retain the original
+`source_request={"endpoint":"/api/v2/events","params":{...}}`.
+
+Entity and activity query matches also retain their own type and stable identity in results.
+Unknown publication history cannot establish quiet days. Preview-only `history_days=30` produces
+setup history and cadence estimates; remove it before creating a Monitor and choose delivery
+explicitly. Inspect `executed_requests` and `setup_executed_requests` for the exact reads.
+
+Saving without scheduling: pass `enabled=false` to MCP `create_monitor` (REST body `enabled: false`). Inspect the saved Monitor, then explicitly enable with `set_monitor_enabled` only when requested. MCP query subjects default to paused when `enabled` is omitted; legacy subjects can activate automatically when a running slot is available. Preview never saves or delivers.
+
+For query-backed activity Monitors, read `evaluation.query_coverage`. Complete pagination of observed publication-journal records can notify even when `source_history_complete` is false. Explain the observed-publication scope; never describe it as exhaustive source intake. Failed or capped reads cannot establish completion. Historical estimates with partial source history cannot establish quiet days.
+
+For ongoing activity query Monitors, explicitly set `time_basis: "recorded"` in query params. Explain that dates now follow journal availability, including late arrivals; keep the original executed request in `source_request`. Omission preserves publication-date behavior. Do not silently reinterpret an existing publication-date Monitor. Retain publication, recorded, and source dates in evidence.
+
+## Access after trial
+
+The trial lasts seven days with one optional seven-day extension. After an expired Free trial,
+signed-in browsing still uses QU, including Atlas and Explore, but REST keys, OAuth/MCP,
+Monitor execution and exports require a subscription. Saved keys and Monitor configurations
+remain; execution pauses. Do not work around a subscription response using another transport,
+headers, or a scheduled client loop. Unknown entitlement status is a retryable service error.

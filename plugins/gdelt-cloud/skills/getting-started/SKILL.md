@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-getting-started
-description: Use this skill whenever the user mentions GDELT Cloud at all — before the first API call in a project, and whenever they describe anything they want to build, monitor, chart, count or answer using events, stories, summaries, entities, facilities, tone or share of voice. It carries the orientation and the conventions that decide whether a call is correct, because almost every filter that is wrong in an interesting way returns HTTP 200 with the wrong data rather than an error. Pair it with gdelt-cloud-core-api, which maps the ask onto an endpoint.
+description: Use this skill whenever the user mentions GDELT Cloud at all — before the first API call in a project, and whenever they describe anything they want to build, monitor, chart, count or answer using events, stories, summaries, entities, Situations, country context and the Countries directory, publication activity, public office-holders, facilities, tone or share of voice. It carries the orientation and the conventions that decide whether a call is correct, because almost every filter that is wrong in an interesting way returns HTTP 200 with the wrong data rather than an error. Pair it with gdelt-cloud-core-api, which maps the ask onto an endpoint, including the trial and what a Free account keeps after it.
 ---
 
 # Building on GDELT Cloud — read this before your first call
@@ -66,7 +66,7 @@ Follow them and your first build will be correct; skip them and it will look cor
 ```
 Base URL   https://gdeltcloud.com/api/v2
 Auth       Authorization: Bearer gdelt_sk_...
-Keys       https://gdeltcloud.com/api-keys   (free plan reads every dataset)
+Keys       https://gdeltcloud.com/api-keys   (7-day evaluation: 1,000 QU, every dataset over the API and MCP)
 ```
 
 Two MCP servers are wired by this plugin. `gdelt-cloud` is the data; `gdelt-cloud-docs` is the
@@ -81,18 +81,21 @@ jq '.paths."/api/v2/events".get.parameters[] | {name, description}' openapi-v2.j
 ## The twelve rules
 
 **1. Resolve an entity once, then reuse the id.**
-`GET /api/v2/search?q=<name>&type=<person|organization|place>&limit=10` is the resolver the rest of
-the API assumes you called. The canonical public call uses only `q`, optional `type`, and `limit`;
-its candidates carry terminal spine `e_…` ids. Present ambiguous candidates, pick one, and reuse
-that id. Never filter by a bare company or person name across more than one endpoint — you can get
-a different entity on each.
+`GET /api/v2/search?q=<name>&type=<person|organization|place|facility>&country_match=strict&limit=10`
+returns lexical identity candidates (MCP `unified_entity_search`). Refine with `country`, `type`,
+and `holds_office=true` for people with published office evidence. Strict country matching uses
+known source association; `country_match=include_unknown` explicitly broadens it.
+Inspect match explanations and country evidence, then select the intended candidate. Preserve its
+returned `entity_id` (`e_…`, `wiki:…` or `llm:…`) for endpoints that accept that identifier space.
+Facilities retain a separate `facility_id`; unlinked source records have no entity ID to reuse.
+Never select a candidate just because it ranks first or resolve the same bare name separately
+on several endpoints.
 
-**`entity` is the canonical spelling of that parameter, everywhere.** Older aliases (`entity_id`,
-and `entities` where an endpoint takes several) are still accepted and still documented per
-endpoint, but `entity` is the name to write in new code and the name `applied_filters` echoes
-back. Where an endpoint accepts more than one id at once it says so in its parameter list —
-`/reference/parameters#identifier-parameters` is the table, and it is the only place that is
-current.
+**Use the destination endpoint's documented identifier parameter.** `entity` is the recommended
+spelling on the reporting and record endpoints that declare it. Some aggregate contracts use a
+plural canonical parameter: `/share-of-voice` declares `entities`, with singular compatibility
+aliases. Read `/reference/parameters#identifier-parameters` and `applied_filters` rather than
+assuming a parameter or a multi-ID format transfers unchanged to another endpoint.
 
 **2. Identifier spaces are not interchangeable, and the wrong one returns an empty 200.**
 A spine `e_…` id, a news `wiki:…` id, a GEM entity id, a CIK, an LEI and a SAM.gov UEI are
@@ -102,9 +105,10 @@ alone. `/gov/awards` also takes `cik:` and rejects bare names. `/exposure` also 
 spelling for a spine alias. Check the identifier table in
 `/reference/parameters#identifier-parameters` before chaining two endpoints.
 
-For a new cross-surface workflow, the terminal `e_…` returned by the canonical `/search` call is
-the default join key. Reach for a source-specific identifier only when that endpoint explicitly
-requires one, such as a CIK for filings or a GEM owner id for the energy-owner registry.
+Reuse the exact selected identifier for each endpoint that documents support for its space.
+A returned terminal `e_…` is useful across many sources, but never invent one for a `wiki:…` or
+`llm:…` candidate. A source-specific leg may require a CIK, GEM owner ID or LEI; use its documented
+identifier from the candidate evidence, or mark that leg unavailable.
 
 **3. A `/summary` endpoint is close to its list sibling, but not identical.**
 Count before you list. `/events/summary` takes most of the list's filters — `days`, `date`,
@@ -248,3 +252,21 @@ opposite responses — back off and retry versus stop and tell the user. The ful
 Ask the `gdelt-cloud-docs` MCP server. If the docs are wrong or missing something, its `submit_feedback`
 tool reaches a human. Do not guess a parameter name — the server rejects unknown filters into
 `applied_filters.ignored`, and a guess becomes a silent wrong answer rather than an error.
+
+## Explore and access
+
+Explore starts with Stories and also offers Events, Entities, Facilities and a searchable Countries
+directory. Atlas Today defaults to distinct coded Event activity for the current UTC day. Use
+reporting/publication labels and keep macro observation years and office as-of dates intact.
+Public officials are person entities distinguished by published office evidence, not a separate
+kind of person page. Countries and Situations have public frozen daily editions and live signed-in
+views. Open linked evidence in new tabs while retaining the selected dates and time basis.
+
+A new account starts a 7-day evaluation with 1,000 QU and every dataset over the API and MCP, with
+one optional 7-day extension on request. Afterwards the Free plan continues in the web app with
+50 QU a month, including Atlas, but customer REST keys, OAuth/MCP, Monitor execution and exports
+pause until you subscribe. Keys and Monitor settings remain saved. Every Free account can claim a
+one-time 500 QU grant, valid 7 days from activation, announced by email — so a key that answers
+`403 PROGRAMMATIC_ACCESS_DENIED` after the evaluation is a plan state, not a broken key.
+Paid subscribers and active trials can create shared Situations for 5 QU; canonical reuse costs
+0 QU and retries reuse the original idempotency key. See the core API skill before this write.

@@ -25,8 +25,11 @@ with a plausible-looking answer rather than an error.
 ```
 
 You will be asked for an API key on enable. Create one free at
-[gdeltcloud.com/api-keys](https://gdeltcloud.com/api-keys) — **the free plan reads every dataset**;
-paid plans buy volume and products, not access.
+[gdeltcloud.com/api-keys](https://gdeltcloud.com/api-keys). A new account starts a 7-day evaluation
+with 1,000 QU and every dataset over the API and MCP (one 7-day extension on request); afterwards the
+Free plan continues in the web app with 50 QU a month while API keys, OAuth, the MCP server, Monitor
+execution and exports pause until you subscribe. Every Free account can claim a one-time 500 QU
+grant, valid 7 days from activation, announced by email.
 
 Non-interactively:
 
@@ -113,10 +116,10 @@ restart, the tools are simply absent, which reads as a broken install.
 
 | Skill | For |
 |---|---|
-| `getting-started` | The rules that decide whether a call is correct. Read by the others. |
-| `core-api` | Maps a plain-English ask onto the right endpoint and the minimal correct call |
-| `building-with-the-api` | Writing CODE against it: paging to the end, truncated vs empty, caching, cadence |
-| `hosted-monitors` | Resolve → preview → create → inspect runs, signed webhooks and complete-result replay |
+| `getting-started` | The rules that decide whether a call is correct, identity resolution first, and what a Free account keeps after the evaluation. Read by the others. |
+| `core-api` | Maps a plain-English ask onto the right endpoint — Events, Stories, Situations, Countries, activity, offices — and the minimal correct call |
+| `building-with-the-api` | Writing CODE against it: paging to the end, truncated vs empty, caching, cadence — plus first principles and four worked builds |
+| `hosted-monitors` | Resolve → preview → create → inspect: Event/Story Monitors and query Monitors over Events, Stories, Entities or Activity, signed webhooks, exact replay |
 | `war-risk-underwriting` | Chokepoint and route monitors, political-violence exposure, marine war-risk briefs |
 | `counterparty-exposure` | Company → hierarchy → assets → news → filings → government exposure |
 | `supplier-disruption` | N suppliers × M sites, daily digest with an escalation threshold |
