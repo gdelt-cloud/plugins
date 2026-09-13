@@ -66,8 +66,18 @@ Follow them and your first build will be correct; skip them and it will look cor
 ```
 Base URL   https://gdeltcloud.com/api/v2
 Auth       Authorization: Bearer gdelt_sk_...
-Keys       https://gdeltcloud.com/api-keys   (7-day evaluation: 1,000 QU, every dataset over the API and MCP)
+Keys       https://gdeltcloud.com/api-keys   (programmatic access during evaluation or on paid/Academic plans)
 ```
+
+New accounts get a 7-day evaluation with 1,000 QU, REST API and MCP access, and up to three daily
+email Monitors. Bulk downloads remain paid-only. After the evaluation, Free keeps the web app and
+API Arena with 50 QU a month plus one daily email Monitor; API keys, OAuth, MCP, Monitor webhooks
+and bulk downloads require a paid plan. Eligible existing personal workspaces can claim a one-time
+500 QU grant valid for 7 days.
+
+Verified Academic & Research accounts get permanent no-cost access with 5,000 QU a month, API and
+MCP access, five daily Monitors, Monitor webhooks, bulk downloads, and every data surface; Briefs are
+excluded.
 
 Two MCP servers are wired by this plugin. `gdelt-cloud` is the data; `gdelt-cloud-docs` is the
 documentation. When you need a parameter, a value list, or a response shape, **ask `gdelt-cloud-docs`

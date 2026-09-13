@@ -24,12 +24,16 @@ with a plausible-looking answer rather than an error.
 /plugin install gdelt-cloud@gdelt-cloud
 ```
 
-You will be asked for an API key on enable. Create one free at
-[gdeltcloud.com/api-keys](https://gdeltcloud.com/api-keys). A new account starts a 7-day evaluation
-with 1,000 QU and every dataset over the API and MCP (one 7-day extension on request); afterwards the
-Free plan continues in the web app with 50 QU a month while API keys, OAuth, the MCP server, Monitor
-execution and exports pause until you subscribe. Every Free account can claim a one-time 500 QU
-grant, valid 7 days from activation, announced by email.
+You will be asked for an API key on enable. Create an account at
+[gdeltcloud.com/api-keys](https://gdeltcloud.com/api-keys). New accounts get a 7-day evaluation with
+1,000 QU, REST API and MCP access, and up to three daily email Monitors; bulk downloads remain
+paid-only. After the evaluation, Free keeps the UI with 50 QU a month and one daily email Monitor,
+while programmatic access requires a paid plan. Eligible existing personal workspaces can claim a
+one-time 500 QU grant valid for 7 days.
+
+Verified Academic & Research accounts get permanent no-cost access with 5,000 QU a month, API and
+MCP access, five daily Monitors, Monitor webhooks, bulk downloads, and every data surface; Briefs are
+excluded.
 
 Non-interactively:
 
