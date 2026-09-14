@@ -50,17 +50,12 @@ selected terminal `e_…` id — see the `gdelt-cloud-counterparty-exposure` ski
 identifier-space rules, which apply here too. Then per supplier: `/events?entity=`,
 `/stories?entity=`, and media tone if entitled.
 
-**Read `entity_match` before you believe an events row.** It defaults to `material` — the supplier
-is a party to the event — but where material attribution has not been built the server substitutes
-`coverage`, i.e. any event in a story that mentions them, and still answers 200. It flags the
-substitution in `applied_filters.coverage_fallback_applied` and explains it in
-`applied_filters.entity_match_note`. On a supplier watchboard that distinction is the whole product:
-a coverage row can be a plant fire at your supplier or a passing mention in an unrelated market
-round-up, and only the flag tells you which reading you were given. Naming `entity_match=material`
-or `actor` explicitly returns `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today instead of substituting —
-on a watchboard, branch on that refusal rather than shipping unaudited rows. The Event surface
-already serves the adjudicated incident view; preserve `incident.uid` as the deduplication key when
-merging pages or combining several supplier queries.
+**Treat entity-scoped Events as coverage, not supplier attribution.** The supplier appears in a
+linked Story; this does not establish that it acted in or was materially affected by the Event.
+Omit `entity_match` to inherit the API default, or pass the only supported value, `coverage`.
+Inspect the linked Story and source evidence before escalating a row. The Event surface already
+serves the adjudicated incident view; preserve `incident.uid` as the deduplication key when merging
+pages or combining several supplier queries.
 
 For a supplier set that shares one question, cadence, delivery route, and response process, prefer
 a Hosted entity Monitor with up to 25 confirmed ids and `match: coverage`; use

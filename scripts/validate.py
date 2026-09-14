@@ -50,6 +50,9 @@ EXPECTED_GDELT_SKILLS = {
 FORBIDDEN_CLAIMS = [
     re.compile(r'free plan (can )?reads? every dataset', re.I),
     re.compile(r'including the free tier', re.I),
+    re.compile(r'entity_match\s*=\s*(?:material|actor)', re.I),
+    re.compile(r'entity_match[^\n]{0,80}defaults? to\s+`?material', re.I),
+    re.compile(r'accepted values are\s+`?material', re.I),
 ]
 FREE_PLAN_TOKENS = ('1,000 QU', '50 QU', '500 QU')
 FREE_PLAN_TOKEN_FILES = ('README.md', 'plugins/gdelt-cloud/skills/getting-started/SKILL.md')

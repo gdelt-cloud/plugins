@@ -122,18 +122,11 @@ private state, nonstandard schedules, multi-endpoint dashboards, and historical 
 ## Six things that return 200 and are wrong
 
 1. **Reading `entity=` on `/events` as "events this entity did"** — it is not, and this is the one
-   that has actually burned an evaluator. `entity_match` defaults to `material` (the entity is a
-   party to the event), but where material attribution has not been built the server SUBSTITUTES
-   `coverage` — story co-occurrence — and still answers 200. It tells you, in
-   `applied_filters.coverage_fallback_applied` and `applied_filters.entity_match_note`: *"These rows
-   are events in stories the entity appears in, not events the entity is a party to."* Most such
-   rows will not name your entity anywhere in their own payload, and some of them are still right.
-   Read the flag before you put the rows in front of anyone. The accepted values are `material`,
-   `actor` and `coverage`; naming either of the first two **explicitly** returns
-   `503 ENTITY_ATTRIBUTION_UNAVAILABLE` today rather than a substitution you did not ask for, which
-   is the honest answer and the one to build against. Passing `entity_match=coverage` yourself
-   returns the same rows as the default with `coverage_fallback_applied: false`, because you asked
-   for co-occurrence instead of being handed it.
+   that has actually burned an evaluator. Entity matching is coverage through a linked Story: the
+   entity appears in that Story, and the returned Events are carried by it. This does not establish
+   that the entity acted in or was materially involved in the Event. Omit `entity_match` to inherit
+   the API default, or explicitly pass its only supported value, `coverage`. Do not invent a
+   material- or actor-attribution mode; the public contract does not offer one.
 2. **A bare name instead of a resolved id** — different entity per endpoint.
 3. **Mixed identifier spaces** — `e_…`, `wiki:…`, GEM ids, CIK, LEI are not interchangeable, and the
    accepted set differs by endpoint. The wrong one returns an empty result, not an error.
@@ -147,8 +140,8 @@ private state, nonstandard schedules, multi-endpoint dashboards, and historical 
    `incident_resolution=llm,self` to keep only groupings that were adjudicated.
 
 Read `applied_filters` on every response. It echoes what the server actually used; a filter missing
-from it was not applied. That one habit catches all six — and it is the only way to see the
-`entity_match` substitution in (1) at all.
+from it was not applied. That one habit catches all six and keeps coverage evidence labelled as
+coverage rather than attribution.
 
 ## When you need a value list
 

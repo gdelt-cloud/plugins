@@ -50,7 +50,7 @@ carry `facility_id` instead, and unlinked source records have no resolved entity
 | Leg | Call | Identifier it wants |
 |---|---|---|
 | Corporate hierarchy | `GET /api/v2/entities/{entity_id}/hierarchy` | use the selected terminal `e_…` id |
-| News coverage | `GET /api/v2/events?entity=…&entity_match=…` and `GET /api/v2/stories?entity=…` | use the selected returned entity ID accepted by reporting — **and read `entity_match`**, see below |
+| News coverage | `GET /api/v2/events?entity=…` and `GET /api/v2/stories?entity=…` | use the selected returned entity ID accepted by reporting — this is linked-Story coverage, see below |
 | Media tone | `GET /api/v2/entities/{entity_id}/tone` | **requires an explicit date window** |
 | Share of voice | `GET /api/v2/share-of-voice?entity=…&category=…` | an id in `entity` / `entity_id` / `entities`, **plus a denominator** — see below |
 | Physical assets | `GET /api/v2/facilities?entity=…` / `GET /api/v2/energy/assets?entity=…` | use the terminal `e_…`; keep source-specific GEM ids separate |
@@ -71,24 +71,13 @@ which names the eight filters that qualify in `details.allowed_filters`. Pick on
 
 ### `entity=` on `/events` is not "events this counterparty did"
 
-`entity_match` defaults to `material` — the counterparty is a party to the event — but where
-material attribution has not been built the server substitutes `coverage`, meaning any event in a
-story that merely mentions them, and still answers 200. Check two fields on every response:
-
-```
-applied_filters.coverage_fallback_applied   true  -> these are co-occurrence rows
-applied_filters.entity_match_note                 -> the server says so in words
-```
-
-A coverage row is not automatically wrong — a consortium-membership story is a real link — but it
-is not attribution, and a diligence memo must not present it as one. The accepted values are
-`material`, `actor` and `coverage`. Naming `material` or `actor` explicitly returns
-`503 ENTITY_ATTRIBUTION_UNAVAILABLE` today rather than substituting, which is what you want in a
-pipeline: a refusal you can branch on beats rows you have to audit. Naming `coverage` yourself
-returns the same rows as the default with `coverage_fallback_applied: false` — same data, but now
-it is your decision. When combining several counterparties, merge returned Events on
-`incident.uid`; duplicate suppression is part of the served incident view and is not a request
-switch.
+Entity matching uses coverage through a linked Story: the counterparty appears in that Story, and
+the Events it carries qualify. This is mention/linkage evidence rather than attribution. Omit
+`entity_match` to inherit the API default, or pass its only supported value, `coverage`; the public
+contract has no material- or actor-attribution mode. Inspect the Story and source evidence before a
+diligence memo describes the counterparty as involved. When combining several counterparties,
+merge returned Events on `incident.uid`; duplicate suppression is part of the served incident view
+and is not a request switch.
 
 ```
 GET /api/v2/share-of-voice?entity=e_12345&category=cameoplus_crime&days=30

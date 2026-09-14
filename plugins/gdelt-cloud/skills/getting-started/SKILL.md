@@ -71,9 +71,9 @@ Keys       https://gdeltcloud.com/api-keys   (programmatic access during evaluat
 
 New accounts get a 7-day evaluation with 1,000 QU, REST API and MCP access, and up to three daily
 email Monitors. Bulk downloads remain paid-only. After the evaluation, Free keeps the web app and
-API Arena with 50 QU a month plus one daily email Monitor; API keys, OAuth, MCP, Monitor webhooks
-and bulk downloads require a paid plan. Eligible existing personal workspaces can claim a one-time
-500 QU grant valid for 7 days.
+API Arena with 50 QU a month, saved Monitor settings and previews; API keys, OAuth, MCP, scheduled
+Monitor execution, Monitor webhooks and bulk downloads require active access. Eligible existing
+personal workspaces can claim a one-time 500 QU grant valid for 7 days.
 
 Verified Academic & Research accounts get permanent no-cost access with 5,000 QU a month, API and
 MCP access, five daily Monitors, Monitor webhooks, bulk downloads, and every data surface; Briefs are

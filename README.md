@@ -27,9 +27,9 @@ with a plausible-looking answer rather than an error.
 You will be asked for an API key on enable. Create an account at
 [gdeltcloud.com/api-keys](https://gdeltcloud.com/api-keys). New accounts get a 7-day evaluation with
 1,000 QU, REST API and MCP access, and up to three daily email Monitors; bulk downloads remain
-paid-only. After the evaluation, Free keeps the UI with 50 QU a month and one daily email Monitor,
-while programmatic access requires a paid plan. Eligible existing personal workspaces can claim a
-one-time 500 QU grant valid for 7 days.
+paid-only. After the evaluation, Free keeps the UI, API Arena, saved Monitor settings and previews
+with 50 QU a month; API, MCP and scheduled Monitor execution require active access. Eligible
+existing personal workspaces can claim a one-time 500 QU grant valid for 7 days.
 
 Verified Academic & Research accounts get permanent no-cost access with 5,000 QU a month, API and
 MCP access, five daily Monitors, Monitor webhooks, bulk downloads, and every data surface; Briefs are
