@@ -50,11 +50,11 @@ as a modelling choice you have to defend, not a default.
    by GPR as though it were an absolute scale.
 2. **Fix the base window across the whole panel and state it.** A rolling baseline that moves with
    the series will flatten exactly the regime change you are trying to detect.
-3. **`variant` and `construction` change what you are measuring — and only one construction is
-   sound for time-series work.** The two GPR lenses and the own-coverage vs world-corpus
-   constructions are different series, not settings. Pick one per panel and put it in the column
-   name. Ask the `gdelt-cloud-docs` MCP for the current accepted values rather than hardcoding them
-   — the 400 carries `details.accepted_values`.
+3. **`world_corpus` is one fixed GPR series, not another lens matrix.** The Events and Attention
+   lenses belong to `own_coverage`. A world-corpus call must send
+   `construction=world_corpus&variant=gpr&metric=gpr&weighting=attention`; any other combination
+   returns `400 INCOMPATIBLE_PARAMETERS`. Pick one valid series per panel and put it in the column
+   name. Ask the `gdelt-cloud-docs` MCP for the current accepted values rather than hardcoding them.
 
    The default, `own_coverage`, normalises a place against its own coverage, which carries that
    country's publishing calendar into the index — and the calendar does not point the same way
@@ -95,7 +95,8 @@ whole signal when you join to returns.
 ```python
 # one row per (iso3, date); every column names its own construction
 cols = [
-    "gpr_<variant>_<construction>",   # Atlas reading, baseline-aware
+    "gpr_events_own_coverage",        # or gpr_attention_own_coverage
+    "gpr_world_corpus",               # fixed variant=gpr construction
     "event_count",                    # your rollup, same window, same filters
     "significance_sum",               # severity, NOT summed with other metrics
     "fatalities",                     # conflict family only; null where not published
@@ -122,7 +123,10 @@ anything you need filtered server-side. Bulk export is gated to the Intelligence
 Academic plans, so check before designing around it, and read each month's settled-day count rather
 than assuming a period is complete.
 
-**Language is a coverage lever, not a detail.** For any country whose press is not primarily English, pass `languages=` with its language codes. A series built from English-only coverage of a non-English country is measuring foreign attention to it, which is a different variable and moves for different reasons.
+**Language is a coverage lever on the underlying reporting calls, not an Atlas GPR parameter.**
+When you build a companion rollup from `/events` or `/stories`, pass `languages=` for countries
+whose press is not primarily English. Do not send `languages` to `/intelligence/gpr`; it is not in
+that endpoint's contract.
 
 
 ### Low-count Atlas readings

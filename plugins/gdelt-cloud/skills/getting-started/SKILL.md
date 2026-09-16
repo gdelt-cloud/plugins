@@ -123,11 +123,11 @@ identifier from the candidate evidence, or mark that leg unavailable.
 **3. A `/summary` endpoint is close to its list sibling, but not identical.**
 Count before you list. `/events/summary` takes most of the list's filters — `days`, `date`,
 `date_start`/`date_end`, `entity`, `country_match`, `geo_precision_max` — and not the list-only
-concerns `search`, `sort` and `cursor`. An unknown parameter lands in `applied_filters.ignored`
-rather than 400ing, so a summary and a list CAN describe different populations while both return
-200. Compare `applied_filters` on both, and read the exact per-endpoint parameter set from
-`/reference/endpoints` or the OpenAPI spec through the docs MCP. Do not memorise a count: the two
-lists move independently, which is the whole reason this rule exists.
+concerns `search`, `sort` and `cursor`. Descriptor-backed v2 endpoints reject an unknown parameter
+with `400 UNKNOWN_PARAM`; older compatibility surfaces may instead report it under
+`applied_filters.ignored`. Read the exact per-endpoint parameter set from `/reference/endpoints` or
+the OpenAPI spec through the docs MCP, and never interpret a result until every sent filter was
+either applied or rejected.
 
 **4. `bbox` axis order differs by family.**
 Events, stories, facilities and energy take **latitude first** (`lat_min,lon_min,lat_max,lon_max`).
@@ -171,7 +171,10 @@ fixed share; count `incident_resolution` yourself over your own window if the ra
 and `uid` names the survivor; `self` means a judge looked and found none; `unadjudicated` means
 nothing ever compared this event to anything and `uid` is a fallback, not a verdict. `unadjudicated`
 is the honest majority: only events that were candidates for a duplicate are ever adjudicated.
-Nothing is deleted either way — the duplicate keeps its own id and stays retrievable.
+Merged and withdrawn records do not necessarily stay retrievable at their old IDs. A detail read
+can return `404 EVENT_MERGED` or `404 STORY_MERGED`; follow the successor ID when the body supplies
+one. `404 EVENT_WITHDRAWN` has no single live successor, so re-query the list endpoint for the
+current event covering the incident. None of these is a blind-retry error.
 
 **11. A call costs the same whatever `limit` you pass — so always page at the maximum.**
 A `/api/v2` call is charged per CALL, not per row, so `limit=25` is not cheaper than `limit=100`:
@@ -260,8 +263,9 @@ opposite responses — back off and retry versus stop and tell the user. The ful
 ## When you are stuck
 
 Ask the `gdelt-cloud-docs` MCP server. If the docs are wrong or missing something, its `submit_feedback`
-tool reaches a human. Do not guess a parameter name — the server rejects unknown filters into
-`applied_filters.ignored`, and a guess becomes a silent wrong answer rather than an error.
+tool reaches a human. Do not guess a parameter name. Current descriptor-backed v2 endpoints return
+`400 UNKNOWN_PARAM`; a compatibility endpoint may disclose an unrecognised spelling in
+`applied_filters.ignored`. Treat either outcome as a request to correct the call, not as data.
 
 ## Explore and access
 

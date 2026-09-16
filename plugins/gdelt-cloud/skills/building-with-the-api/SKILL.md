@@ -72,7 +72,8 @@ reporting "no activity":
 |---|---|---|
 | `data: []`, filters all echoed in `applied_filters` | Genuinely no coverage for that combination | Report zero coverage, never "no events happened" |
 | `data: []`, a filter missing from `applied_filters` | The server did not apply it | Fix the parameter name — you are looking at an unfiltered answer that happened to be empty |
-| `data: []`, something in `applied_filters.ignored` | The server did not recognise it | Same — a typo, or a parameter that does not exist on this endpoint |
+| `400 UNKNOWN_PARAM` | A descriptor-backed endpoint rejected a spelling it does not support | Use `details.accepted_params` / `did_you_mean` and correct the request |
+| `data: []`, something in `applied_filters.ignored` | A compatibility endpoint did not recognise it | Correct the typo or remove the unsupported parameter before interpreting the data |
 | Full page, `next_cursor` non-null | Truncated | Walk it (§1) |
 
 ```python
@@ -242,7 +243,8 @@ verbatim and keep every filter identical between pages. Situation member lists a
 under a `scope_version`: send the version from page one on every later page, and treat a `409` as
 "the collection changed — restart at offset 0". `has_more` is measured on both; row count is not.
 
-**Honest unknowns.** `applied_filters.ignored` names what the server did not apply; `caps` and
+**Honest unknowns.** Strict descriptor-backed endpoints return `400 UNKNOWN_PARAM`; legacy
+compatibility endpoints may instead use `applied_filters.ignored` to name what they did not apply. `caps` and
 `truncated` say when an array is bounded; a withheld section is not an empty one; and every coverage
 statement is dated. Carry those fields into whatever you build, or the build will claim more than
 the API did.
