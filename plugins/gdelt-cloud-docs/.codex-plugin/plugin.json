@@ -1,11 +1,28 @@
 {
   "name": "gdelt-cloud-docs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Lets your agent read the GDELT Cloud API reference, parameter and value lists, and the OpenAPI spec while it writes your code. No account needed.",
-  "author": { "name": "GDELT Cloud", "email": "hello@gdeltcloud.com", "url": "https://gdeltcloud.com" },
+  "author": {
+    "name": "GDELT Cloud",
+    "email": "hello@gdeltcloud.com",
+    "url": "https://gdeltcloud.com"
+  },
   "homepage": "https://docs.gdeltcloud.com",
   "repository": "https://github.com/gdelt-cloud/plugins",
   "license": "MIT",
   "mcpServers": "./.mcp.codex.json",
-  "interface": { "displayName": "GDELT Cloud Docs", "category": "Productivity", "capabilities": ["Read"] }
+  "interface": {
+    "displayName": "GDELT Cloud Docs",
+    "category": "Productivity",
+    "capabilities": [
+      "Read"
+    ],
+    "shortDescription": "API contracts and examples, no account required.",
+    "longDescription": "Read the GDELT Cloud API reference and OpenAPI contracts with a focused builder skill. Distinguishes schema guidance from live authenticated data.",
+    "developerName": "GDELT Cloud",
+    "defaultPrompt": [
+      "Find the endpoint and pagination contract for this integration"
+    ]
+  },
+  "skills": "./skills/"
 }

@@ -9,7 +9,7 @@ The output is a tidy frame: one row per (place, date), columns you can regress o
 construction. The failure mode is not a crash — it is a series that looks stationary and is not,
 because the denominator moved underneath it.
 
-Read `gdelt-cloud-getting-started` first.
+For MCP calls, read [MCP workflows](../getting-started/references/mcp-workflows.md).
 
 This is intentionally a client workflow, not a Hosted Monitor. Atlas history, explicit baselines,
 coverage-floor handling, missing-date expansion, and market-data joins require multi-call state. A

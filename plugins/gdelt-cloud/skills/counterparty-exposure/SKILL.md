@@ -9,7 +9,7 @@ This is the hardest workflow in the API because it crosses identifier spaces. It
 where a mistake is invisible: the wrong id returns an empty `200`, and an empty result reads as
 "no exposure" when it means "we asked the wrong question".
 
-Read `gdelt-cloud-getting-started` first. Rule 2 is the whole game here.
+For MCP calls, read [MCP workflows](../getting-started/references/mcp-workflows.md).
 
 ## Resolve once, and record what you resolved
 

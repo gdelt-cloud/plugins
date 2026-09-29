@@ -101,7 +101,7 @@ def check_customer_copy():
             continue
         for client in ('.claude-plugin', '.codex-plugin', '.cursor-plugin'):
             scanned.append(d / client / 'plugin.json')
-        scanned += sorted(d.glob('skills/*/SKILL.md'))
+        scanned += sorted(d.glob('skills/**/*.md'))
     for f in scanned:
         if not f.exists():
             continue
@@ -131,7 +131,7 @@ def check_customer_copy():
                 errs.append(f"{f.relative_to(ROOT)}: frontmatter description must mention {kw!r}")
     build = skills / 'building-with-the-api' / 'SKILL.md'
     if build.exists():
-        text = build.read_text()
+        text = build.read_text() + ''.join(p.read_text() for p in build.parent.glob('references/*.md'))
         for heading in BUILD_ANYTHING_HEADINGS:
             if heading not in text:
                 errs.append(f"{build.relative_to(ROOT)}: missing heading {heading!r}")
@@ -235,7 +235,7 @@ def main() -> int:
                 errs.append(f"{p}: policy.authentication={auth!r} — only ON_INSTALL or ON_USE are "
                             f"valid; omit the key entirely for a server that needs no auth")
             inst = pol.get('installation')
-            if inst is not None and inst not in ('AVAILABLE', 'REQUIRED', 'BLOCKED'):
+            if inst is not None and inst not in ('AVAILABLE', 'INSTALLED_BY_DEFAULT', 'NOT_AVAILABLE'):
                 errs.append(f"{p}: policy.installation={inst!r} is not a value codex accepts")
 
     # ★ CURSOR IS THE THIRD CLIENT AND WAS INVISIBLE HERE. Adding `.cursor-plugin/` without adding
@@ -344,6 +344,18 @@ def main() -> int:
                 f"{sorted(EXPECTED_GDELT_SKILLS - actual_skills)}, extra="
                 f"{sorted(actual_skills - EXPECTED_GDELT_SKILLS)}"
             )
+
+    # Skills must remain usable after installation, without the source checkout.
+    for plugin_root in (ROOT / 'plugins').iterdir():
+        if not plugin_root.is_dir():
+            continue
+        for doc in plugin_root.glob('skills/**/*.md'):
+            for target in re.findall(r'\[[^\]]*\]\(([^)]+)\)', doc.read_text()):
+                if '://' in target or target.startswith('#'):
+                    continue
+                dest = (doc.parent / target.split('#')[0]).resolve()
+                if not dest.is_relative_to(plugin_root.resolve()) or not dest.is_file():
+                    errs.append(f"{doc.relative_to(ROOT)}: missing or escaping packaged reference {target}")
 
     check_customer_copy()
 

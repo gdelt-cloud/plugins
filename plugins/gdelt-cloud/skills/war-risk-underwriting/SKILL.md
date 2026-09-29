@@ -9,12 +9,14 @@ The customer here is an underwriter or a marine analyst pricing a route, or a se
 on a region. They need coded incidents with severity, geography they can trust to site level, the
 articles behind each incident, and a rolling index they can defend to a committee.
 
-Read the `gdelt-cloud-getting-started` skill first — the twelve rules there decide whether this is
-correct. Two of them are load-bearing for maritime work in particular:
+Two geographic conventions are particularly important for maritime work:
 
 - **`bbox` on `/events` is latitude first; `bbox` on every `/maritime/*` endpoint is longitude
   first.** A chokepoint box sent to the wrong family lands somewhere else entirely, at 200.
 - **A country-centroid event is not an event at the strait.** Pass `geo_precision_max=2`.
+
+For MCP execution, use [MCP workflows](../getting-started/references/mcp-workflows.md).
+REST recipes below are conceptual: retrieve the operation schema before translating them.
 
 ## Build it in this order
 
