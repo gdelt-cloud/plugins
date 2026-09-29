@@ -1,6 +1,6 @@
 ---
 name: gdelt-cloud-core-api
-description: Use this skill for ANY request that touches GDELT Cloud data — events, stories, summaries, entities, Situations (maintained collections of Stories and coded Events around one occurrence), country context and the Countries directory, publication activity, public office-holders, facilities, tone or share of voice — whenever the user describes something they want to build, monitor, chart, count or answer with it and it does not obviously belong to a narrower workflow skill. It maps a plain-English ask onto the right endpoint and the minimal correct call, including identity resolution before any destination call, so the first attempt returns real data instead of an empty 200.
+description: Choose the GDELT Cloud endpoint for Events, Stories, summaries, entities, Situations, Countries, publication activity, public offices, facilities or media metrics. Use for routing and interpretation when a narrower workflow does not fit.
 ---
 
 # The Core API — which endpoint answers which question
@@ -20,13 +20,15 @@ These surfaces cover the common workflows. Pick by the **shape of the question**
 | *How is X being talked about?* | `GET /api/v2/entities/{entity_id}/tone` | Sentiment for one entity over time, with evidence |
 | *Who dominates the conversation?* | `GET /api/v2/share-of-voice` | One entity's share of a defined story population |
 
-## One call, one Query Unit — page at 100
+For MCP execution, use [MCP workflows](../getting-started/references/mcp-workflows.md).
+REST recipes below are conceptual: retrieve the operation schema before translating them.
 
-Standard reads cost 1 QU regardless of `limit`, so `limit=25` is four times the price of
-`limit=100` for the same data. Page at 100, and reach for a `/summary` endpoint before you count a
-list by walking it.
+## Size the call for the question
 
-## Always start here
+Use a summary for a count, a small page for a conversational sample, and supported larger pages
+for an explicit export. Read current costs instead of assuming every operation costs one QU.
+
+## Resolve named identities before joins
 
 ```
 GET /api/v2/search?q=<name>&type=<person|organization|place|facility>&country_match=strict&limit=10
@@ -107,7 +109,7 @@ accepted list attached, not a confident `0%`.
 
 ## Composing them — the pattern that answers most real questions
 
-1. **Resolve** the thing (`/search`) → keep the `e_…` id.
+1. **Resolve** the thing (`/search`) → keep the returned ID and its identifier space.
 2. **Size** the period (`/events/summary` or `/stories/summary`) → find where the volume is.
 3. **Drill** into the buckets that carried it (`/events`, `/stories`).
 4. **Attach** context: `/entities/{id}/tone` for sentiment, `/share-of-voice` for prominence,
@@ -140,8 +142,7 @@ private state, nonstandard schedules, multi-endpoint dashboards, and historical 
    `incident_resolution=llm,self` to keep only groupings that were adjudicated.
 
 Read `applied_filters` on every response. It echoes what the server actually used; a filter missing
-from it was not applied. That one habit catches all six and keeps coverage evidence labelled as
-coverage rather than attribution.
+from it was not applied. This helps detect filter mistakes; separately inspect identifiers, geography and coverage.
 
 ## When you need a value list
 

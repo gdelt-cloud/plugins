@@ -75,7 +75,12 @@ Two servers, both Streamable HTTP:
 | Data | `https://gdelt-cloud-mcp.fastmcp.app/mcp` | `Authorization: Bearer gdelt_sk_…`, or OAuth |
 | Docs | `https://docs.gdeltcloud.com/mcp` | none |
 
-Both are JSON-RPC endpoints. Opening either in a browser returns `405` — that is expected.
+These are JSON-RPC transports. A plain browser GET may return 405; verify a connection by MCP
+initialization/discovery, not by treating a browser page as the protocol test.
+
+The custom Manufact endpoint `https://mcp.gdeltcloud.com/mcp` is still launch-gated. The public
+configs retain Horizon until TLS and client acceptance pass; do not switch just because the
+new URL appears in migration documentation.
 
 ### By hand, without the plugin system
 
@@ -116,11 +121,43 @@ restart, the tools are simply absent, which reads as a broken install.
 
 ## What you get
 
-**`gdelt-cloud`** wires both MCP servers and ships shared workflow skills:
+**`gdelt-cloud`** wires both MCP servers and ships eight workflow skills. The three larger skills
+have short entrypoints and packaged references that load only when needed. It supports reads,
+interactive results where the host supports them, and authorized workspace writes.
+
+| Client task | Start here | What does not transfer automatically |
+|---|---|---|
+| ChatGPT / Claude web or desktop research | Remote data connector with OAuth; inspect live tools and read the server's task resource if needed | Installing a local coding plugin does not configure a separate web conversation |
+| Codex / Claude Code builder | This marketplace plugin, then `building-with-the-api` | REST examples are not literal MCP arguments; inspect the live schema |
+| No account / schema exploration | `gdelt-cloud-docs` | Documentation tools do not return authenticated data |
+
+The registered/published web listing is a separate release surface. Server resource reads work
+only when supported by the host or its `read_resource` compatibility tool. Do not claim local
+skills are automatically installed by adding an MCP URL. Current [OpenAI skill import](https://developers.openai.com/plugins/build/mcp-server#import-skills-from-the-mcp-server)
+uses a bounded submission-time snapshot; it is not a live sync of this repository.
+
+### Try a bounded task
+
+- “Show three events in Iran in the last seven days, with sources and coverage limitations.”
+- “Resolve this company, then show which asset and filing sources can identify it.”
+- “Preview a supplier Monitor; do not save or enable it yet.”
+- “Build a paginated REST client that preserves missing-date and quota errors.”
+
+Read [MCP workflows](plugins/gdelt-cloud/skills/getting-started/references/mcp-workflows.md)
+for all 14 category routes, discovery, writes, errors and text-only fallback. `_tool_list` and
+`_tool_get` reveal operations and schemas; `_tool_call` executes reads; `gdelt_cloud_tool_write`
+executes authorized Monitor/Situation changes. The docs-only product exposes no data-server writes.
+The same connected tool may be gated by account/workspace entitlement; visibility is not access.
+
+The account actions are ordinary links: [Create account](https://gdeltcloud.com/signup) and
+[View plans](https://gdeltcloud.com/pricing). No plugin performs signups or purchases for the user.
+
+### Skills
+
 
 | Skill | For |
 |---|---|
-| `getting-started` | The rules that decide whether a call is correct, identity resolution first, and what a Free account keeps after the evaluation. Read by the others. |
+| `getting-started` | The rules that decide whether a call is correct, identity resolution first, and what a Free account keeps after the evaluation. Short onboarding entrypoint with optional conventions and MCP reference. |
 | `core-api` | Maps a plain-English ask onto the right endpoint — Events, Stories, Situations, Countries, activity, offices — and the minimal correct call |
 | `building-with-the-api` | Writing CODE against it: paging to the end, truncated vs empty, caching, cadence — plus first principles and four worked builds |
 | `hosted-monitors` | Resolve → preview → create → inspect: Event/Story Monitors and query Monitors over Events, Stories, Entities or Activity, signed webhooks, exact replay |
@@ -129,14 +166,14 @@ restart, the tools are simply absent, which reads as a broken install.
 | `supplier-disruption` | N suppliers × M sites, daily digest with an escalation threshold |
 | `country-risk-series` | Atlas GPR and Posture as a frame you can join to returns |
 
-**`gdelt-cloud-docs`** wires the documentation server alone.
+**`gdelt-cloud-docs`** wires the documentation server and a focused `api-reference` skill. It needs no account and exposes no data-server connection.
 
 ## Why the skills exist
 
 Almost every way of getting this API wrong returns `200` with a plausible-looking result rather than
 an error. `bbox` axis order differs between the core and maritime families. A `/summary` endpoint
-takes a smaller parameter set than its list sibling, and an unknown parameter is echoed into
-`applied_filters.ignored` rather than rejected. Six identifier spaces coexist and the wrong one
+takes a smaller parameter set than its list sibling, and current descriptor-backed endpoints reject unknown parameters while some compatibility
+surfaces report `applied_filters.ignored`. Six identifier spaces coexist and the wrong one
 returns an empty result. Each skill front-loads the ones that matter for its workflow.
 
 If you build without the skills, at least read

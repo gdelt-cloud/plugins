@@ -8,7 +8,7 @@ description: Use this skill to build a supplier, site or supply-chain disruption
 N suppliers × M sites, run daily, with a threshold that pages someone. The two things that make this
 hard are geography precision and knowing when a day is complete.
 
-Read `gdelt-cloud-getting-started` first. Rules 5, 6 and 8 are what keep this from crying wolf.
+For MCP calls, read [MCP workflows](../getting-started/references/mcp-workflows.md).
 
 ## The taxonomy is split across domains you would not guess
 
@@ -46,7 +46,7 @@ compact countries the centroid is inside every box you would draw.
 
 Resolve each supplier once with
 `GET /api/v2/search?q=<name>&type=organization&limit=10`, present ambiguous candidates, and cache the
-selected terminal `e_…` id — see the `gdelt-cloud-counterparty-exposure` skill for the
+selected returned identifier and check each destination’s accepted ID space — see the `gdelt-cloud-counterparty-exposure` skill for the
 identifier-space rules, which apply here too. Then per supplier: `/events?entity=`,
 `/stories?entity=`, and media tone if entitled.
 
@@ -98,8 +98,8 @@ Where neither is available to you, the consequences you must build around:
 ## Freshness
 
 Coded history begins March 2026 and today is still filling. A digest that runs at 06:00 against a
-partially-settled day produces a false all-clear. Bound the digest to **complete** days — run over
-`date_end = yesterday` — and put the window in the output so a reader can see what was and was not
+partially-settled day produces a false all-clear. Bound the digest to **complete** days — start with
+`date_end = yesterday`, then require positive returned completeness evidence — and put the window in the output so a reader can see what was and was not
 covered.
 
 ## Ranking and the threshold
