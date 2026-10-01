@@ -1,11 +1,11 @@
 {
-  "version": "2026.09.30.7",
+  "version": "2026.10.01.2",
   "source": "gdelt-cloud/gdelt-cloud-mcp/skills/workflows",
   "files": {
     "building-with-api/SKILL.md": "sha256:7675e20d122afd4dffbd2e8a8a9069f8e13fb36c9dfd4c029be31a258c6d7b4c",
-    "counterparties-assets/SKILL.md": "sha256:9dedb61808122f92e6ecef89e39e52b5aae7bbb7356f8e19b77917a00c2fc04f",
+    "counterparties-assets/SKILL.md": "sha256:e24d121b67dc11538c1bd45ddf91f2d3af2c644b604db629005245afeaeb2b6d",
     "getting-started/SKILL.md": "sha256:2d0368175b3d51ec971aec2dbd44192e39658def7a09b76f23450dc7cd927a5d",
-    "news-country-research/SKILL.md": "sha256:e977c63b8026a74bb00500990412b8b53e06f4b6baf177e02450f1186230a6eb",
+    "news-country-research/SKILL.md": "sha256:8f7ab9eaed0b1e60d812ff75c8cc6d6333c1f07a50206fc6268d13fd7c443aaa",
     "situations-monitors/SKILL.md": "sha256:12778dc4abf77a160bd26804b47e2a2717a308af99c4b94f2e36478faba44751"
   }
 }
