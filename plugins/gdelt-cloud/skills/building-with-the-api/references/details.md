@@ -26,6 +26,18 @@ Increase the budget or start a new walk with a smaller page size; never shrink a
 `limit`. Save yielded receipts and an exception's `page` when attached. The helper is a bounded iterator, not
 a durable checkpoint store or a general retry policy.
 
+For a resumable collector, follow the shared
+[recorded-time feed workflow](../../../workflows/building-with-api/SKILL.md#ongoing-recorded-time-feed).
+Persist a versioned fingerprint of the resolved entity, time basis, paired UTC bounds, kind and
+page size with the cursor. Pass that complete frozen scope to every transport read and reject a
+resume under different parameters. Validate a page before accepting its records; commit records,
+`change_id` deduplication and pending cursor state together. Retain failed receipts separately.
+An append-only export written before pagination validation can duplicate data on a valid retry.
+Use transactional storage with idempotent or derived exports, and test interrupted commits,
+malformed-page retries, incomplete empty pages and scope changes. A completed interval is not an
+everlasting completed feed: explicitly open the next contiguous bounded interval with fresh
+per-kind cursor and completion state.
+
 Supply a receipt validator for your endpoint's canonical semantic echoes. This Event example
 expects the documented ISO-3 **array** for country, rather than comparing `"France"` to `["FRA"]`:
 
