@@ -67,5 +67,79 @@ class CursorPagesTest(unittest.TestCase):
                 list(m.cursor_pages(Client([value]), '/events', {}, max_rows=1,
                                     require_complete_coverage=False))
 
+    def test_row_budget_never_changes_a_cursor_bound_page_size(self):
+        c = Client([page([1, 2], 'opaque'), page([3])])
+        pages = m.cursor_pages(c, '/activity', {}, page_size=2, max_rows=3)
+        self.assertEqual(next(pages)['data'], [1, 2])
+        with self.assertRaises(m.PaginationLimit):
+            next(pages)
+        # Activity fingerprints limit too. A smaller continuation is a different query.
+        self.assertEqual([query['limit'] for _, query in c.calls], [2])
+
+    def test_caller_mutation_cannot_change_the_frozen_query(self):
+        params = {'country': 'Iran'}
+        c = Client([page([1], 'opaque'), page([2])])
+        pages = m.cursor_pages(c, '/events', params)
+        next(pages)
+        params['country'] = 'France'
+        next(pages)
+        self.assertEqual(c.calls[1][1]['country'], 'Iran')
+
+    def test_explicit_ignored_filters_are_not_a_valid_receipt(self):
+        value = page([])
+        value['applied_filters']['ignored'] = ['country']
+        with self.assertRaisesRegex(ValueError, 'ignored filters') as caught:
+            next(m.cursor_pages(Client([value]), '/events', {'country': 'Iran'}))
+        self.assertIs(caught.exception.page, value)
+
+    def test_malformed_cursor_is_rejected_before_a_page_is_yielded(self):
+        for cursor in ('', 123, [], {}):
+            with self.subTest(cursor=cursor), self.assertRaisesRegex(ValueError, 'cursor'):
+                next(m.cursor_pages(Client([page([], cursor)]), '/activity', {}))
+
+    def test_conflicting_pagination_cannot_establish_completion(self):
+        for cursor, more in ((None, True), ('opaque', False), (None, 'false')):
+            value = page([], cursor)
+            value['pagination']['has_more'] = more
+            with self.subTest(cursor=cursor, more=more), self.assertRaisesRegex(ValueError, 'pagination'):
+                next(m.cursor_pages(Client([value]), '/activity', {}))
+
+    def test_repeated_cursor_is_rejected_before_the_repeated_page_is_yielded(self):
+        c = Client([page([1], 'same'), page([2], 'same')])
+        pages = m.cursor_pages(c, '/events', {})
+        self.assertEqual(next(pages)['data'], [1])
+        with self.assertRaises(m.PaginationLimit) as caught:
+            next(pages)
+        self.assertEqual(caught.exception.page['data'], [2])
+
+    def test_endpoint_receipt_validator_rejects_changed_semantic_filters(self):
+        value = page([])
+        value['applied_filters'] = {'country': 'USA'}
+
+        def validate(receipt):
+            if receipt['applied_filters'].get('country') != 'FRA':
+                raise ValueError('Country filter changed')
+
+        with self.assertRaisesRegex(ValueError, 'Country filter changed') as caught:
+            next(m.cursor_pages(Client([value]), '/events', {'country': 'FRA'},
+                                validate_receipt=validate))
+        self.assertIs(caught.exception.page, value)
+
+    def test_validated_complete_empty_page_preserves_unknown_receipt_fields(self):
+        value = page([])
+        value['applied_filters'] = {'country': 'FRA'}
+        value['meta']['exhaustive'] = False
+        value['future_optional_field'] = {'unmeasured': None}
+        seen = []
+
+        def validate(receipt):
+            seen.append(receipt)
+            if receipt['applied_filters']['country'] != 'FRA':
+                raise ValueError('Country filter changed')
+
+        self.assertEqual(list(m.cursor_pages(Client([value]), '/events', {'country': 'FRA'},
+                                             validate_receipt=validate)), [value])
+        self.assertEqual(seen, [value])
+
 
 if __name__ == '__main__': unittest.main()

@@ -20,6 +20,34 @@ and inspect every page's receipt. A terminal cursor only ends this result sequen
 prove complete date coverage or exhaustive semantic recall. Keep filters fixed and copy opaque
 cursors unchanged; stop and disclose a row/call budget or a non-advancing cursor.
 
+The helper freezes the query and its first-page `limit`: the activity cursor binds `limit` too.
+When the remaining row budget cannot fit that unchanged page size, it stops before another read.
+Increase the budget or start a new walk with a smaller page size; never shrink a continuation's
+`limit`. Save yielded receipts and an exception's `page` when attached. The helper is a bounded iterator, not
+a durable checkpoint store or a general retry policy.
+
+Supply a receipt validator for your endpoint's canonical semantic echoes. This Event example
+expects the documented ISO-3 **array** for country, rather than comparing `"France"` to `["FRA"]`:
+
+```python
+from cursor_pages import cursor_pages
+params = {"country": "FRA", "country_match": "location",
+          "date_start": "2026-09-22", "date_end": "2026-09-28"}
+def validate_scope(receipt):
+    applied = receipt.get("applied_filters") or {}
+    expected = {**params, "country": ["FRA"]}
+    for key, value in expected.items():
+        if applied.get(key) != value:
+            raise ValueError(f"Missing or changed applied filter: {key}")
+pages = list(cursor_pages(client, "/events", params, page_size=100, max_rows=1000,
+                          validate_receipt=validate_scope))
+```
+
+Replace the example dates with the user's explicit scope. Apply the same discipline to every
+material filter; each endpoint can canonicalize aliases differently. The helper rejects explicit
+ignored filters, malformed/repeated cursors and contradictory pagination before yielding a page,
+but it cannot infer an identity or geography match on your behalf.
+
 **Want the denominator?** Pass `include_total=true` and read `pagination.estimated_total`. It is
 opt-in because it costs a second scan, so ask for it on the first page and not on every one:
 
@@ -63,16 +91,23 @@ series = Counter(r["event_date"] for r in rows)
 ```
 
 Two things follow. `pagination.estimated_total` is `null` on a `search=` request for the same reason
-— any number there would describe the candidate pool. And `search_score` is your precision lever:
-semantic retrieval is deliberately broad, so threshold it rather than assuming every hit is relevant.
+— any number there would describe the candidate pool. `search_score` ranks semantic candidates
+within a query; it is not a calibrated probability or a universal relevance cutoff. Preserve the
+name-match arm and unscored candidates for separate review instead of silently treating null as zero:
 
 ```python
-strong = [r for r in rows if (r.get("search_score") or 0) >= 0.55]
+name_matches = [r for r in rows if r.get("match_type") == "name"]
+ranked_semantic = sorted(
+    [r for r in rows if r.get("match_type") == "semantic" and r.get("search_score") is not None],
+    key=lambda r: r["search_score"], reverse=True)
+needs_review = [r for r in rows if r not in name_matches and r not in ranked_semantic]
 ```
 
 `match_type` tells you which arm found the row: `semantic` (embedding distance, carries a
 `search_score`) or `name` (literal match, `search_score` is `null` — a name hit has no computed
 distance, and the API will not invent one). The key is absent entirely on non-search requests.
+Review returned summaries and underlying source evidence for decision-changing relevance. A
+validated cutoff for one task is not automatically valid for another or a later retrieval version.
 
 For a structured time series, use `/events/summary?group_by=date` with structured filters. It is one
 call instead of a walk.
@@ -81,7 +116,7 @@ call instead of a walk.
 
 - An event card's key is **`id`**. `event_id` is the name of the PATH parameter
   (`/events/{event_id}/stories`), not a field on the card. `e["event_id"]` raises `KeyError`.
-- `id` identifies a **coded story**, not a real-world incident. Group on `incident.uid` to count
+- `id` identifies an **Event record**, not a real-world incident. Group on `incident.uid` to count
   incidents, and pass `incident_resolution=llm,self` to restrict to the rows where that grouping was
   actually adjudicated — coverage is partial by design.
 - `subcategory` is the **filter value** (`"EC04"`, or an ACLED sub-event type like
@@ -97,8 +132,9 @@ reads are rebuilt every 30 minutes. So:
 - **Cache with revalidation.** Key by endpoint, normalized filters, access scope and version/freshness.
   Closed dates can still receive corrections or backfills; today generally needs a shorter TTL.
 - **End your window yesterday** for anything a user will compare day-over-day.
-- **`meta.settled_at`** tells you when the snapshot behind the response was built — use it as your
-  cache key rather than wall-clock time.
+- **Retain returned freshness/version evidence**, including `meta.settled_at` when present.
+  It contributes to the scoped cache's version; it is not a replacement for endpoint, filters,
+  account scope or scheduled revalidation.
 - **Poll on a schedule, not a loop.** Rate limits are per-minute and per-plan; a 429 with code
   `RATE_LIMITED` means back off and retry, and `QUOTA_EXCEEDED` means stop and tell the user. Same
   status, opposite responses — read `code`, and read `details.retry_after`.
@@ -138,7 +174,8 @@ section 2's advice to end a comparison window yesterday matters more than any ve
 - [ ] Every list read either walks to `next_cursor is None` or states the cap it stopped at
 - [ ] No `len(rows) >= limit` truncation checks anywhere
 - [ ] `applied_filters` is asserted, not assumed, for every filter that matters
-- [ ] Empty results are reported as *no coverage*, never as *nothing happened*
+- [ ] Complete empty results say *no returned records in the measured scope*; missing/partial
+      coverage remains unknown, and neither result claims *nothing happened*
 - [ ] `null` metrics are rendered as gaps, never charted as `0`
 - [ ] Windows are bounded and end yesterday if the number is compared over time
 - [ ] Entity ids are resolved once and reused; no bare names crossing endpoints
@@ -162,12 +199,13 @@ advance the checkpoint only after the whole interval has been processed.
 
 ## Build anything: first principles
 
-The four sections below are the rules that hold across EVERY endpoint, so a build that the skills
+The principles below apply across endpoints, so a build that the skills
 above do not describe can still be derived correctly. Each one is a place a plausible HTTP 200 hides.
 
-**Served, not raw.** Every read answers from settled serving tables, and the response says which
-(`meta.row_source`, `meta.settled_at`, and on the activity journal `meta.coverage.window_complete`
-plus `meta.exhaustive`). A `null` is *unmeasured* — an unknown `linked_event_count`, a withheld
+**Served, not raw.** Event and Story reads use serving records; the activity feed uses its committed
+publication journal, while registries retain their native source semantics. Read the available
+receipts (`meta.row_source`, `meta.settled_at`, and on the activity journal
+`meta.coverage.window_complete` plus `meta.exhaustive`), not warehouse SQL. A `null` is *unmeasured* — an unknown `linked_event_count`, a withheld
 source count, a country with no returned row — and is never a zero. Read the coverage block before
 counting anything, and render a null as a gap.
 
@@ -184,13 +222,15 @@ true beginning.
 and chose one. Reuse that id across Events, Stories, Situations, activity and offices; never let a
 bare name cross an endpoint boundary, and never take the first candidate by position.
 
-**Budget in Query Units.** One read is 1 QU whatever `limit` you pass; admitted Situation creation
-is 5 QU and reusing an existing one is 0; Monitor runs are 0. So count before you list (`/summary`
-endpoints, `include_total=true` on the first page only), page at the maximum `limit`, and read
-`GET /api/v2/meta/query-units` for your position rather than guessing it.
+**Budget in Query Units.** Read current source multipliers, endpoint weights and measured usage
+from `GET /api/v2/meta/query-units`; a response's `X-Quota-Cost` is an upper bound, not proof of
+consumption. Prefer summaries for aggregates and supported larger pages for exports, while keeping
+the cursor's page size fixed. Set a request and elapsed-time budget before collection. Pending usage
+is unknown, not zero, and exhausted quota stops the job.
 
-**Two paging shapes.** Events, Stories and the activity journal are keyset-paged: copy `next_cursor`
-verbatim and keep every filter identical between pages. Situation member lists are offset-paged
+**Two paging shapes.** Events, Stories and the activity journal expose their own opaque cursor
+forms: copy `next_cursor` verbatim and keep every filter and the page size identical between pages.
+Do not infer their internal keyset/offset implementation. Situation member lists are offset-paged
 under a `scope_version`: send the version from page one on every later page, and treat a `409` as
 "the collection changed — restart at offset 0". `has_more` is measured on both; row count is not.
 
