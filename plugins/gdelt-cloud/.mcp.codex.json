@@ -1,5 +1,5 @@
 {
-  "mcp_servers": {
+  "mcpServers": {
     "gdelt-cloud": {
       "url": "https://gdelt-cloud-mcp.fastmcp.app/mcp",
       "bearer_token_env_var": "GDELT_API_KEY"
