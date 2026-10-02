@@ -35,6 +35,43 @@ Resolve canonical publication identity before hydration; missing Story/Event anc
 
 Completion belongs to that interval. An ongoing collector must explicitly open its next contiguous bounded interval after the previous one completes, resetting per-kind cursors and completion flags. Exercise malformed-pagination then valid retry, incomplete empty pages, interruption/resume, changed identity/window/limit and next-window transition in offline fixtures. Use the installed plugin's bounded cursor helper where its contract fits, or implement equivalent guards; the helper does not provide durable checkpoint storage.
 
+Before accepting a page, use this completion receipt guard or equivalent. Its indexed cursor access is deliberate: `pagination.get("next_cursor")` silently turns a missing field into terminal null. Retain refused receipts as pending evidence. This guard does not replace scope/filter validation, row validation, hydration or durable storage.
+
+```python
+def validate_activity_page(receipt, kind, previous_cursor=None):
+    if kind not in ("event", "story"):
+        raise ValueError("Choose an event or story stream")
+    if not isinstance(receipt, dict) or receipt.get("success") is not True:
+        raise ValueError("Successful API receipt required")
+    page = receipt.get("pagination")
+    if not isinstance(page, dict) or not {"next_cursor", "has_more"} <= page.keys():
+        raise ValueError("Missing pagination evidence; keep the checkpoint pending")
+    next_cursor = page["next_cursor"]
+    if next_cursor is not None and (not isinstance(next_cursor, str) or not next_cursor):
+        raise ValueError("Invalid continuation token")
+    if type(page["has_more"]) is not bool or page["has_more"] != (next_cursor is not None):
+        raise ValueError("Contradictory pagination")
+    if next_cursor is not None and next_cursor == previous_cursor:
+        raise ValueError("Repeated cursor")
+    meta = receipt.get("meta")
+    coverage = meta.get("coverage") if isinstance(meta, dict) else None
+    if not isinstance(coverage, dict) or coverage.get("window_complete") is not True:
+        raise ValueError("Positive window coverage required before page acceptance")
+    sources = coverage.get("sources")
+    source = "events" if kind == "event" else "stories"
+    if not isinstance(sources, list) or not any(
+        isinstance(s, dict) and s.get("source") == source
+        and s.get("kind") == kind and s.get("available") is True for s in sources
+    ):
+        raise ValueError("Requested journal source is unavailable or unreported")
+    rows = receipt.get("data")
+    if not isinstance(rows, list):
+        raise ValueError("Activity data must be an array")
+    return rows, next_cursor
+```
+
+Call `rows, next_cursor = validate_activity_page(receipt, kind, previous_cursor=cursor)` **before** any accepted-record write or cursor advancement. Then validate material filter echoes and every required member; process hydration/removals; commit accepted records and cursor in one durable transaction. Only after that transaction and required export/delivery succeed can explicit `next_cursor is None` complete the interval. Persist a seen-cursor set as needed to reject cycles across restarts. An empty page with a non-null continuation progresses; it does not complete.
+
 ## Story feed
 Use `search_stories` for clustered narratives and `get_story_articles` for evidence. REST: `GET /api/v2/stories`, `GET /api/v2/stories/{story_id}/articles`. Preserve canonical IDs, pagination and returned public URLs. Follow server cursors and stop on the requested bound, repeated cursors, or error. Deduplicate canonical identity across pages. Do not generate a cursor or infer completion from an empty page when coverage is incomplete. Use full MCP mode to inspect bounded API receipts before implementing.
 
