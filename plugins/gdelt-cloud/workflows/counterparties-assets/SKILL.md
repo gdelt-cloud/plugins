@@ -24,6 +24,8 @@ Link facility names to the returned public GDELT Cloud facility `url`; `detail_u
 
 `first_seen_date`/`last_seen_date` are GDELT Cloud observation dates, not the registry publication date or verification of continuous operation. Distinguish them from returned source vintage/`last_updated`; unknown source vintage stays unknown. At multi-unit sites, legacy `capacity_mw` can be a representative unit value. Prefer native `capacity` and `unit_capacities`; derive only a labelled registry unit sum when units and coverage are coherent. Do not call that sum nameplate, installed, net or contracted capacity without a specified source basis. Owner/operator, direct ownership and parent stakes answer different questions. Registry operating status is not outage telemetry.
 
+Our release ID or measurement date identifies a GDELT Cloud snapshot, not the original publisher's publication date. Statistical reference years, native publisher vintage and our snapshot date answer different questions. Keep them separate, and leave the original publication date unknown when the result does not provide it.
+
 GLEIF records describe accounting consolidation, not blanket beneficial ownership. Filings provide dated reported relationships; macro provides native economic series; Epoch covers published AI datasets. Use these deeper groups only when the unified answer needs their source detail. Risk screening is an evidence lead, not a legal determination. See getting started (`skill://getting-started/SKILL.md`).
 
 ## Minerals, factories and compute infrastructure
