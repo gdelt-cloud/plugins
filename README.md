@@ -190,8 +190,8 @@ a Monitor webhook receiver, and end-to-end Monitor workflows:
 
 ## Links
 
-The data plugin's 0.8.3 candidate includes canonical workflow bundle
-`2026.10.02.4`, exported from the monorepo MCP package. Existing skill names route
+The data plugin's 0.8.4 candidate includes canonical workflow bundle
+`2026.10.02.5`, exported from the monorepo MCP package. Existing skill names route
 to the packaged `workflows/` files. `python scripts/validate.py` checks their
 SHA-256 manifest as well as client manifests and packaged references. Client
 setup stays separate from shared workflows. Imported skills are snapshots; a
