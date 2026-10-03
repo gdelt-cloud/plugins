@@ -20,7 +20,7 @@ runtime:
 
 Run: python3 scripts/validate.py
 """
-import json, re, pathlib, sys
+import json, re, pathlib, sys, hashlib
 
 RESERVED = {"claude-code-marketplace","claude-code-plugins","claude-plugins-official",
  "claude-plugins-community","claude-community","anthropic-marketplace","anthropic-plugins",
@@ -30,6 +30,10 @@ RESERVED = {"claude-code-marketplace","claude-code-plugins","claude-plugins-offi
 KEBAB = re.compile(r'^[a-z0-9]+(-[a-z0-9]+)*$')
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 errs = []
+try:
+    exec((ROOT / 'scripts/validate_workflows.py').read_text(), {'__file__': str(ROOT / 'scripts/validate_workflows.py')})
+except Exception as error:
+    errs.append(f'Workflow bundle failed validation: {error}')
 EXPECTED_GDELT_SKILLS = {
     'building-with-the-api',
     'core-api',
@@ -55,7 +59,7 @@ FORBIDDEN_CLAIMS = [
     re.compile(r'accepted values are\s+`?material', re.I),
 ]
 FREE_PLAN_TOKENS = ('1,000 QU', '50 QU', '500 QU')
-FREE_PLAN_TOKEN_FILES = ('README.md', 'plugins/gdelt-cloud/skills/getting-started/SKILL.md')
+FREE_PLAN_TOKEN_FILES = ('README.md', 'plugins/gdelt-cloud/skills/getting-started/references/client-setup.md')
 CLAIM_SCANNED_MANIFESTS = (
     '.claude-plugin/marketplace.json',
     '.agents/plugins/marketplace.json',
@@ -293,6 +297,17 @@ def main() -> int:
         }
         if not all(manifests.values()):
             continue
+
+        # Codex plugin JSON uses mcpServers; mcp_servers is the TOML configuration
+        # spelling and silently yields zero native plugin servers.
+        codex_mcp_path = manifests['codex'].get('mcpServers')
+        if not isinstance(codex_mcp_path, str):
+            errs.append(f"{rel}: Codex mcpServers must name a packaged JSON file")
+        else:
+            codex_mcp = load(rel / codex_mcp_path)
+            servers = codex_mcp.get('mcpServers') if codex_mcp else None
+            if not isinstance(servers, dict) or not servers:
+                errs.append(f"{rel}/{codex_mcp_path}: Codex plugin JSON requires nonempty mcpServers")
 
         # Claude is deliberately unversioned so skill-only fixes are not pinned in its cache.
         if 'version' in manifests['claude']:

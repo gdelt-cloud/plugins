@@ -1,5 +1,7 @@
 {
-  "mcp_servers": {
-    "gdelt-cloud-docs": { "url": "https://docs.gdeltcloud.com/mcp" }
+  "mcpServers": {
+    "gdelt-cloud-docs": {
+      "url": "https://docs.gdeltcloud.com/mcp"
+    }
   }
 }

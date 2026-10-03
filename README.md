@@ -90,7 +90,9 @@ wire it yourself. Three steps:
 ```bash
 # 1. skills — plain directories, each holding a SKILL.md
 git clone https://github.com/gdelt-cloud/plugins /tmp/gdelt-cloud-plugins
-mkdir -p .claude/skills && cp -R /tmp/gdelt-cloud-plugins/plugins/gdelt-cloud/skills/* .claude/skills/
+mkdir -p .claude/skills
+cp -R /tmp/gdelt-cloud-plugins/plugins/gdelt-cloud/skills/* .claude/skills/
+cp -R /tmp/gdelt-cloud-plugins/plugins/gdelt-cloud/workflows .claude/
 
 # 2. key
 export GDELT_API_KEY=gdelt_sk_...
@@ -187,6 +189,14 @@ a Monitor webhook receiver, and end-to-end Monitor workflows:
 <https://github.com/gdelt-cloud/demos>
 
 ## Links
+
+The data plugin's 0.8.4 candidate includes canonical workflow bundle
+`2026.10.02.5`, exported from the monorepo MCP package. Existing skill names route
+to the packaged `workflows/` files. `python scripts/validate.py` checks their
+SHA-256 manifest as well as client manifests and packaged references. Client
+setup stays separate from shared workflows. Imported skills are snapshots; a
+new release must be installed to receive updated guidance. Public MCP connection
+defaults remain on Horizon until the Manufact launch gates pass.
 
 - Docs — <https://docs.gdeltcloud.com>
 - Page index for agents — <https://docs.gdeltcloud.com/llms.txt>
