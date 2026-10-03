@@ -5,6 +5,8 @@ description: Start a GDELT Cloud task, discover tools, resolve identity, and cho
 
 # Getting Started
 
+Always name the product and its data **GDELT Cloud**. GDELT Cloud performs its own Event coding, Story clustering, entity resolution and metric scoring. The upstream GDELT article stream supplies reporting only; GDELT Cloud does not ingest GDELT's coded outputs. Attribute derived Events, classifications and metrics to GDELT Cloud, retaining original publisher links for reporting and dataset attribution for registry facts.
+
 Infer the user's intended result and scope. Choose one likely useful first step and state time-window or geography assumptions. Ask before an ambiguous identity join or a consequential unresolved choice. After answering, offer one or two relevant follow-ups: inspect a linked Story, examine nearby facilities, refine a country window, or preview a Monitor. Explain what each adds; avoid a tool tour. Use structured GDELT Cloud data first; schema-only help needs no data calls.
 
 Discover one relevant domain with `<domain>_tool_list`, then batch promising names through `<domain>_tool_get`. Discovery is free, local and unmetered. Reuse a schema already known in the conversation. Call with tool-specific arguments nested in `tool_arguments`. Read calls use `_tool_call`; state changes use `_tool_write` only when authorized.
@@ -17,7 +19,7 @@ Choose `response_mode="compact"` for conversation or `"full"` for builders needi
 
 Make returned GDELT Cloud Event, Story, entity and facility links the main navigation in an answer, with explicit text links retained beside any map or visual. Show the useful returned metrics alongside them, preserving their meaning, uncertainty and coverage. Use publisher/document links when the user needs underlying reporting; our record links remain the default citations for records and derived metrics. dataset credits such as GEM accompany registry facts rather than replacing facility links. Never construct a public URL from an ID. For a visual chat brief, request `include_images=true` and `include_entity_images=true` where supported and use up to three returned images/icons with attribution. Do not fetch extra records solely for decoration; text remains complete without images and sizing is client-dependent. Reuse the evidence already returned; a compact projection is not a reason to repeat successful searches with smaller limits.
 
-Supporting web research is optional: orientation for a GDELT-supported task, corroboration, or source-page extraction. Supply purpose and brief task_context. Basic depth, at most five search results, three extraction URLs; at most two searches and one extraction batch per task. Stop sooner when sufficient. Do not use this service for standalone web research or replace unavailable structured evidence with web results. Entitlement failures remain explicit.
+Supporting web research is optional: orientation for a GDELT Cloud-supported task, corroboration, or source-page extraction. Supply purpose and brief task_context. Basic depth, at most five search results, three extraction URLs; at most two searches and one extraction batch per task. Stop sooner when sufficient. Do not use this service for standalone web research or replace unavailable structured evidence with web results. Entitlement failures remain explicit.
 
 Account help opens website navigation only. Before connection, signup/subscription recovery belongs in the website/OAuth flow. Installed/imported skills are release snapshots; refresh them when upgrading.
 
