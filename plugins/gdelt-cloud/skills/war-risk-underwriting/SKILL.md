@@ -5,4 +5,4 @@ description: Use this skill to build a war-risk, marine or political-violence ex
 
 # War Risk Underwriting
 
-Read the [shared counterparties assets workflow](../../workflows/counterparties-assets/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use the local files even when connected to the existing Horizon server during the launch transition.
+Read the [shared counterparties assets workflow](../../workflows/counterparties-assets/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use these named-tool workflows with the current GDELT Cloud MCP release. Inspect the connected schema for exact arguments.

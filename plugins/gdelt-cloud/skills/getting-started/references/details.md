@@ -4,16 +4,16 @@
 
 1. **Building software against the REST API** — `https://gdeltcloud.com/api/v2`, an API key, and
    whatever language you are in. Most of what follows is about getting these calls *right*.
-2. **Building an agent on the MCP server** — the same data as tools, with progressive discovery so
-   a large surface does not eat your context. See `gdelt-cloud-building-with-the-api`.
+2. **Building an agent on the MCP server** — the same data as tools, with named tools and optional catalog
+   guidance for selecting the smallest useful workflow. See `gdelt-cloud-building-with-the-api`.
 3. **Answering questions conversationally** in a chat client that can reach an MCP server
    (ChatGPT, Claude, Cowork). The same rules apply; you just call the tools instead of writing
    the requests. Note that some chat clients' connector UIs have no field for an API key, so that
    path should use the supported OAuth flow; a docs-only connection has no data tools — check what you are actually connected to
    before concluding a dataset is empty.
 
-GDELT Cloud is a clean event database over the world's news. It is **not** raw GDELT — we ingest
-the public GDELT article stream as one input and never their coded output. Events are coded here,
+GDELT Cloud is a clean event database over the world's news. It is **not** raw upstream coded data — we ingest
+the public GDELT Project article stream as one input and never their coded output. Events are coded here,
 from clustered news stories, into a CAMEO+ / ACLED-aligned taxonomy; entities are resolved to one
 identity spine across news, SEC filings, sanctions lists and asset registries; and every number
 traces back to the articles behind it.

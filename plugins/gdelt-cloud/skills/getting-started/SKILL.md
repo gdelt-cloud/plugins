@@ -5,6 +5,6 @@ description: Connect to GDELT Cloud, diagnose missing tools or access errors, an
 
 # Getting Started
 
-Read the [shared getting started workflow](../../workflows/getting-started/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use the local files even when connected to the existing Horizon server during the launch transition.
+Read the [shared getting started workflow](../../workflows/getting-started/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use these named-tool workflows with the current GDELT Cloud MCP release. Inspect the connected schema for exact arguments.
 
 Read [client setup and access](references/client-setup.md) for installation, OAuth and entitlement recovery.

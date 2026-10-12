@@ -8,7 +8,7 @@ asset registries, and the physical assets underneath.
 Three jobs this is built for:
 
 - **Software against the REST API** — `https://gdeltcloud.com/api/v2`, an API key, your language.
-- **Agents on the MCP server** — the same data as tools, with progressive discovery.
+- **Agents on the MCP server** — the same data as named tools, with optional catalog guidance.
 - **Conversational use** in a chat client that can reach an MCP server (ChatGPT, Claude, Cowork).
 
 The MCP servers give an agent the data. The skills give it the procedures for using the data
@@ -72,15 +72,15 @@ Two servers, both Streamable HTTP:
 
 | | URL | Auth |
 |---|---|---|
-| Data | `https://gdelt-cloud-mcp.fastmcp.app/mcp` | `Authorization: Bearer gdelt_sk_…`, or OAuth |
+| Data | `https://mcp.gdeltcloud.com/mcp` | `Authorization: Bearer gdelt_sk_…`, or OAuth |
 | Docs | `https://docs.gdeltcloud.com/mcp` | none |
 
 These are JSON-RPC transports. A plain browser GET may return 405; verify a connection by MCP
 initialization/discovery, not by treating a browser page as the protocol test.
 
-The custom Manufact endpoint `https://mcp.gdeltcloud.com/mcp` is still launch-gated. The public
-configs retain Horizon until TLS and client acceptance pass; do not switch just because the
-new URL appears in migration documentation.
+The canonical data endpoint is `https://mcp.gdeltcloud.com/mcp`, hosted on Manufact. Existing
+Horizon connections remain available during migration. Update the connection explicitly; OAuth
+credentials for a different server URL may require reconnecting through the host.
 
 ### By hand, without the plugin system
 
@@ -105,7 +105,7 @@ export GDELT_API_KEY=gdelt_sk_...
   "mcpServers": {
     "gdelt-cloud": {
       "type": "http",
-      "url": "https://gdelt-cloud-mcp.fastmcp.app/mcp",
+      "url": "https://mcp.gdeltcloud.com/mcp",
       "headers": { "Authorization": "Bearer ${GDELT_API_KEY}" }
     },
     "gdelt-cloud-docs": { "type": "http", "url": "https://docs.gdeltcloud.com/mcp" }
@@ -146,9 +146,11 @@ uses a bounded submission-time snapshot; it is not a live sync of this repositor
 - “Build a paginated REST client that preserves missing-date and quota errors.”
 
 Read [MCP workflows](plugins/gdelt-cloud/skills/getting-started/references/mcp-workflows.md)
-for all 14 category routes, discovery, writes, errors and text-only fallback. `_tool_list` and
-`_tool_get` reveal operations and schemas; `_tool_call` executes reads; `gdelt_cloud_tool_write`
-executes authorized Monitor/Situation changes. The docs-only product exposes no data-server writes.
+for all 14 data domains, optional discovery, writes, errors and text-only fallback. Call named
+operations directly using their advertised schemas. Free `get_data_catalog`, `search_tools`,
+`get_tool_schema` and `get_parameter_options` provide detail when needed. Tool annotations
+distinguish reads from mutations; confirm Monitor/Situation changes before execution. The
+docs-only product exposes no data-server writes.
 The same connected tool may be gated by account/workspace entitlement; visibility is not access.
 
 The account actions are ordinary links: [Create account](https://gdeltcloud.com/signup) and
@@ -190,13 +192,14 @@ a Monitor webhook receiver, and end-to-end Monitor workflows:
 
 ## Links
 
-The data plugin's 0.8.6 candidate includes canonical workflow bundle
-`2026.10.03.2`, exported from the monorepo MCP package. Existing skill names route
-to the packaged `workflows/` files. `python scripts/validate.py` checks their
-SHA-256 manifest as well as client manifests and packaged references. Client
-setup stays separate from shared workflows. Imported skills are snapshots; a
-new release must be installed to receive updated guidance. Public MCP connection
-defaults remain on Horizon until the Manufact launch gates pass.
+The data plugin's 0.9.0 release includes canonical workflow bundle
+`2026.10.11.named.3`, exported from the monorepo MCP package. Eight existing skill names route
+to five packaged `workflows/` files. `python3 scripts/validate.py` checks their SHA-256 manifest,
+client manifests and packaged references. Client setup stays separate from shared workflows.
+Update or reinstall an existing coding plugin and restart the session to receive the release.
+OpenAI and Claude web connections and imported submission skills are separate release snapshots;
+they do not automatically update from this repository. The documentation MCP remains separate,
+public and account-free.
 
 - Docs — <https://docs.gdeltcloud.com>
 - Page index for agents — <https://docs.gdeltcloud.com/llms.txt>

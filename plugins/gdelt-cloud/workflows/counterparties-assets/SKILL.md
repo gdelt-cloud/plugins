@@ -1,12 +1,14 @@
 ---
 name: counterparties-assets
 description: Investigate company identities, energy owners, assets, and supply-chain disruption with source evidence.
+metadata:
+  tool_exposure: named
 ---
 
 # Counterparties Assets
 
 ## Supply-chain disruption
-Resolve named counterparties with `unified_entity_search` and inspect candidate IDs. Discover the facilities catalog; use `facilities_search`/`facilities_get` for unified asset context, then scoped Events/Stories for developments. Use filings relations only when a documented counterparty connection is needed. REST: `/api/v2/search`, `/api/v2/facilities`, `/api/v2/facilities/{facility_id}`, `/api/v2/events`, `/api/v2/stories`, and the documented filings relations endpoint. Retrieve exact source-specific parameters through discovery before execution.
+Resolve named counterparties with `unified_entity_search` and inspect candidate IDs. Use `facilities_search`/`facilities_get` for unified asset context, then scoped Events/Stories for developments. Use filings relations only when a documented counterparty connection is needed. REST: `/api/v2/search`, `/api/v2/facilities`, `/api/v2/facilities/{facility_id}`, `/api/v2/events`, `/api/v2/stories`, and the documented filings relations endpoint. Consult optional `get_parameter_options` for unfamiliar source-specific filters; familiar valid operations run directly.
 
 Evidence must distinguish a disclosed supplier/customer relation, ownership, nearby events, and inferred exposure. Proximity alone is not causality. Missing registry coverage does not prove no relationship. Preserve source date, confidence, units, entity resolution and original filing/article URLs. Restricted/admin datasets may be unavailable; do not conceal entitlement failures or substitute open-web assertions as equivalent data.
 
@@ -20,7 +22,11 @@ Reconcile material disagreements in dates, currencies or amounts before ranking 
 ## Energy ownership and registry questions
 For company registry or corporate-family questions, discover `get_entity` and opt into `include_registry=true`; its default false keeps ordinary news lookups small. Use the resolved company identity, especially when a company and its product share a name. Returned `corporate_context` separates typed parent/child relationships from parent SEC and list summaries. Preserve relationship source, dates, null ownership percentages, source status and truncation. Parent CIKs, tickers and list counts belong to that parent, not the selected company. Accounting consolidation does not establish equity ownership. Withheld or unknown sections do not prove no records. If a selected related company carries only an ID, fetch its profile for the returned public link; do not hydrate every relative or invent URLs. REST: `/api/v2/entities/{entity_id}?include_registry=true`. Use specialist discovery only for the deeper source records the question requires.
 
-Use `energy_tool_list`, inspect `energy_search_owners` and `energy_get_owner` with `energy_tool_get`, and call through `energy_tool_call`. They are not standalone server tools. A named owner lookup starts in the GEM ownership registry; cross-source identity questions start with unified search. Use `energy_assets_by_owner` only with the returned GEM entity ID. Asset-specific technology and native capacity are in energy tools; general cross-registry geography is in facilities.
+Use the named `energy_search_owners` and `energy_get_owner` operations directly. Consult optional `get_parameter_options` only for unfamiliar choices. A named owner lookup starts in the GEM ownership registry; cross-source identity questions start with unified search. Use `energy_assets_by_owner` only with the returned GEM entity ID. Asset-specific technology and native capacity are in energy tools; general cross-registry geography is in facilities.
+
+Facility owner filters (`owner_entity_id`/`entity`, including `facilities_by_owner`) match source-reported ownership links. Source coverage, unresolved identities and pagination limit the inventory; it is not a complete legal portfolio. For an owned-only answer, retain returned relationship evidence identifying ownership, with the source, role, date and stake when supplied; unknown stakes remain unknown. For operating sites, `participant_entity` with `participant_role="operator"` asks for that separate source-reported role. An operator, tenant or compute user is not necessarily an owner, and an ownership stake does not by itself establish control or operation.
+
+At the default canonical-site grain, an owner match does not imply that every unit at the site has the same owner. Inspect selected source observations when unit ownership matters. Owner filtering alone does not attach `matched_participation`; an explicit `participant_entity` query supplies that bounded participant evidence.
 
 Link facility names to the returned public GDELT Cloud facility `url`; `detail_url` is an API path. Keep Global Energy Monitor/source links as dataset attribution, not the main facility destination. For readable asset lists use unified `facilities_search` (optionally `source=["gem"]`); use energy tools for deeper registry facts. If a specialist record lacks a facility link, resolve selected assets through facilities only when needed, preserving identity ambiguity instead of inventing URLs. Do not add capacity across incompatible units or treat unknown capacity as zero. No web search is needed for a complete registry answer.
 
@@ -31,7 +37,7 @@ Our release ID or measurement date identifies a GDELT Cloud snapshot, not the or
 GLEIF records describe accounting consolidation, not blanket beneficial ownership. Filings provide dated reported relationships; macro provides native economic series; Epoch covers published AI datasets. Use these deeper groups only when the unified answer needs their source detail. Risk screening is an evidence lead, not a legal determination. See getting started (`skill://getting-started/SKILL.md`).
 
 ## Minerals, factories and compute infrastructure
-Use Facilities for physical sites across GEM, USGS, Climate TRACE, EEA, ports and admitted compute sources. Preserve source memberships; a mine, refinery, industrial installation and GPU cluster have distinct meanings. Inspect `facilities_observations` and `facilities_relationships` through the Facilities discovery group for native capacities, participant roles, location evidence and installation-to-facility links. Resolve owners to returned spine IDs, follow their portfolios and use `facilities_context` for explicitly labelled owner/parent news. Nearby reporting is a lead; ownership and proximity do not prove a site incident. Unresolved owners and absent coordinates remain unavailable.
+Use Facilities for physical sites across GEM, USGS, Climate TRACE, EEA, ports and admitted compute sources. Preserve source memberships; a mine, refinery, industrial installation and GPU cluster have distinct meanings. Call `facilities_observations` and `facilities_relationships` for native capacities, participant roles, location evidence and installation-to-facility links. Resolve owners to returned spine IDs, follow their portfolios and use `facilities_context` for explicitly labelled owner/parent news. Nearby reporting is a lead; ownership and proximity do not prove a site incident. Unresolved owners and absent coordinates remain unavailable.
 
 For a company's use of physical or compute sites, inspect its profile's `facilities.participation` when available, then continue through `facilities_search` with `participant_entity` and optionally `participant_role`. REST: `/api/v2/facilities?participant_entity=...&granularity=site`. The entity preview contains at most six canonical sites with pagination and `api_url`; it is not a complete participant count. The owned-unit `total` and owned preview/type buckets are separate: zero owned rows can coexist with source-reported participation. Compact shows at most six owned cards and discloses omitted cards; full preserves the API preview. A supplier, operator or compute user is not necessarily an owner, and a subsidiary does not inherit its parent's sites. Read `matched_participation` for the terminal entity ID and at most 25 source assertions per site, keeping role, nullable share, resolution status, native JSON evidence and `truncated`. Use returned public site links; `api_url` is a continuation recipe, not a citation. Withheld or failed measurement remains unknown. Request full only if omitted evidence or complete page processing is needed. Do not run extra broad searches when the profile already supplies sufficient evidence.
 
@@ -39,8 +45,81 @@ Commodity and participant-role vocabularies are open observations, not closed al
 
 When both company context and local developments matter at one selected site, `facilities_context` with `include=["nearby"]` and a suitable `radius_km` provides separate owner and geographic Event/Story previews in one bounded call. Keep those scopes separate, cite their returned links, and disclose coordinate precision, dates and truncation. Its preview counts are not country totals or proof of site impact; use the summary endpoints for quantified regional comparisons. Do not refetch the same successful evidence in separate broad searches.
 
-For country production or reserves discover `resource_statistics` through `resources_tool_list/get/call`. Keep commodity, period, units, qualifiers and country/aggregate scope; country reserves are not attributed to individual mines. This USGS mineral inventory does not establish water availability or a complete inventory of every resource. Use Epoch discovery for GPU clusters, chip ownership/use/components and hardware/model relationships, with distinct owner, supplier, foundry and designer roles. Physical buildings and compute observations are not interchangeable. Source vintages and publication coverage must accompany the answer.
+The corresponding REST paths are explicit:
+
+| Named operation | REST request | What it adds |
+|---|---|---|
+| `facilities_context` | `GET /api/v2/facilities/{facility_id}/context` | Bounded owner/parent reporting; `include=nearby` adds a separate geographic screen. Keep `date_start`, `date_end`, `limit` and `radius_km` explicit for a reproducible brief. |
+| `facilities_observations` | `GET /api/v2/facilities/{facility_id}/observations` | Native source capacities/material basis, units, reference years and shared-capacity evidence; optional source/commodity/year filters. |
+| `facilities_relationships` | `GET /api/v2/facilities/{facility_id}/relationships` | Evidence for physical links and participant roles; optional exact `relation_type`, not an ownership-only shortcut. |
+| `facilities_by_owner` | `GET /api/v2/facilities?owner_entity_id=...` | The same owner-side directory matching; qualify each selected relationship before calling it owned. |
+
+Use a returned facility ID, inspect only the selected sites needed for the decision, and keep bounded pages (for example limit 25) with unchanged filters and the returned cursor. Observation reference years are independent of the news window. Append a few useful returned public facility/Event/Story links and source evidence; these REST paths are implementation recipes, not substitute public-record citations. Do not invent record URLs or treat the visible sample as a complete portfolio.
+
+For country production or reserves call `resource_statistics` with its advertised parameters. Keep commodity, period, units, qualifiers and country/aggregate scope; country reserves are not attributed to individual mines. This USGS mineral inventory does not establish water availability or a complete inventory of every resource. Use Epoch discovery for GPU clusters, chip ownership/use/components and hardware/model relationships, with distinct owner, supplier, foundry and designer roles. Physical buildings and compute observations are not interchangeable. Source vintages and publication coverage must accompany the answer.
 
 Resource geography supports country, region and continent. `include_summary=true` returns full-filter observation counts and facets before pagination; it does not sum mineral quantities. Preserve statistic_detail, material_type, material_form and native source fields when comparing production or reserves. Country profiles expose a 12-observation preview with a separate full-filter summary and section availability. Use the returned continuation or the resources group for deeper evidence rather than treating the preview as a complete inventory.
 
-For screening, discover `risk` and read `lists_catalog` first. Select an actually ingested original-publisher source and its exact source_key; inspect category, publisher, last crawl and current entry count before `list_entries_search`. A catalog row is not proof of a complete or fresh list, and a bounded no-match search is not clearance. The catalog refresh does not add a new screening dataset. Retain original-publisher attribution and any unsupported identity or coverage limitation.
+For screening, use `lists_catalog` when the available original-publisher sources are unfamiliar. Select an actually ingested original-publisher source and its exact source_key; inspect category, publisher, last crawl and current entry count before `list_entries_search`. A catalog row is not proof of a complete or fresh list, and a bounded no-match search is not clearance. The catalog refresh does not add a new screening dataset. Retain original-publisher attribution and any unsupported identity or coverage limitation.
+
+## Playbook: connect an ongoing Situation to assets and open data
+
+Use for procurement, supplier exposure or country resilience questions that need more than news.
+Take a maintained Situation and its returned evidence as context, then identify only the sites
+and relationships material to the user's decision. Country co-occurrence is not a facility join.
+
+- Select canonical sites through `facilities_search`; inspect returned owner/operator/participant
+  roles, source memberships and location evidence. Keep source-reported ownership separate from
+  current control or verified beneficial ownership. A multi-source site does not make every native
+  capacity observation additive. Use public GDELT Cloud Facility links as the primary site citations.
+- `facilities_context` separates owner/parent reporting from nearby Events. Use
+  `facilities_observations` or `facilities_relationships` only if a missing capacity, material basis
+  or participant role changes the assessment. A relevant Story or nearby attack is not evidence
+  that a plant stopped or a supplier's shipments fell. Search operator reporting narrowly when
+  corroboration is necessary; a supported absence stays unknown.
+- Add one relevant `resource_statistics` or country structural observation with publisher,
+  reference year, publication vintage when returned, units and qualifiers. National reserves,
+  usable ore production, metal content and annual facility capacity answer different questions.
+  Do not mix their units or apply country statistics to a named facility.
+- Connect selected Event evidence using its **category → subcategory** and all four available
+  CAMEO+ metrics. Distinguish reported intensity from node dependence, propagation conditions
+  and market-relevant information. Conflict has no CAMEO+ scores. Present the returned values,
+  not invented confidence or a guessed aggregate; the news-country research skill gives the
+  compact metric table and population-comparison rules.
+
+A compact output has one row per selected site: **Facility link | documented role/source |
+relevant linked development | established effect | unknown or next verification**. An optional
+second row or footnote gives the dated structural fact. Native client maps or small images can
+supplement it; representative photos and uncertain coordinates do not become incident evidence.
+
+REST follows `/api/v2/facilities`, the returned site observation/context/relationship paths,
+`/api/v2/resources/statistics` and the relevant Event/Situation endpoints. Preserve the exact filters and
+returned cursor for continuation. The visible preview is not a full inventory. If the user wants
+a repeatable watch, keep resolved targets, source choices and nearby opt-in distinct, open an
+unsaved form, and wait for confirmation. Preview history is not notification history and aggregate
+metric changes are not supported new-record Monitor triggers.
+
+
+## Comparison pattern: commodity supply and operating asset exposure
+
+For "compare Chile and Peru copper supply", use country/commodity/year-filtered
+resource statistics, then selected canonical Facilities and their native observations.
+Compare the same statistic, material basis, units and reference year. Mine concentrates,
+solvent extraction, smelting and refining are distinct stages; do not add all production
+rows together. Ore tonnes are not contained-metal tonnes. Missing reserves remain unknown;
+production, reserves and facility capacity do not establish current available supply.
+REST: `/api/v2/resources/statistics`, `/api/v2/facilities`, and selected site's observations.
+
+For "compare operating coal capacity in Poland and Germany", start with the Energy
+summary filtered to operating coal units and grouped by country. Asset counts are native
+unit counts, not power-station counts. Inspect only selected canonical Facilities and
+source observations to establish unit status, capacity basis and publication vintage;
+a representative card capacity can describe a cancelled unit, not the station total.
+Nameplate MW is not generation or uptime. REST: `/api/v2/energy/assets/summary` and the
+selected Facility's observations. Return a small comparable table with units and source
+vintage, public Facility links and a material limitation; paginate only if the task needs it.
+
+These public source facts also exist at their publishers. The useful composition is
+filtered, typed observations plus shared identities, source roles and reporting evidence,
+not a claim of exclusive data. For an economic backtest, confirm an `as_of` vintage
+actually returns observations; an empty vintage cannot be replaced with current revisions.

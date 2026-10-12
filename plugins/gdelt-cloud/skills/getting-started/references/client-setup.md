@@ -2,8 +2,8 @@
 
 ## Connect and verify
 
-- Data: `https://gdelt-cloud-mcp.fastmcp.app/mcp` during the launch transition. The planned
-  `https://mcp.gdeltcloud.com/mcp` replacement is not an instruction to switch before verification.
+- Data: `https://mcp.gdeltcloud.com/mcp`, the canonical Manufact connection. Existing Horizon
+  connections remain available during migration; reconnect explicitly when changing the URL.
 - Documentation: `https://docs.gdeltcloud.com/mcp`, no account required. It provides reference
   material, not live customer data. Discover its current tools instead of guessing their names.
 - ChatGPT and Claude web/desktop: use the host's remote MCP connection and OAuth flow where
@@ -11,7 +11,7 @@
   marketplace skills do not automatically appear in a separate web conversation.
 - Codex and Claude Code: use the plugin's client-specific configuration described in the README.
   Keep API keys in the host's secret configuration or environment, never in a prompt or source file.
-- Check that `gdelt_cloud_tool_list` is available. If only documentation search appears, explain
+- Check that named data tools such as `search_events` and `get_data_catalog` are available. If only documentation search appears, explain
   the missing data connection. Do not interpret missing tools or 401/403 as empty data.
 
 ## Access and account navigation

@@ -31,14 +31,10 @@ supported. A facility uses `facility_id`; an unlinked source record has no entit
 `coverage_30d=0` means quiet in that measured window; null/failed coverage is unknown. Neither
 predicts whether future reporting will match.
 
-The MCP server uses progressive discovery. Inspect the underlying schema, then call it:
+The MCP server exposes named tools. Use the advertised input schema:
 
 ```text
-gdelt_cloud_tool_get(tool_name="unified_entity_search")
-gdelt_cloud_tool_call(
-  tool_name="unified_entity_search",
-  tool_arguments={"q":"ASML", "type":"organization", "country_match":"strict", "limit":10}
-)
+unified_entity_search(q="ASML", type="organization", country_match="strict", limit=10)
 ```
 
 Do not choose the underlying `search_entities` tool for this workflow: that is the news-entity
@@ -119,16 +115,13 @@ REST:
 POST /api/v2/monitors/preview
 ```
 
-MCP: inspect `preview_monitor` with `gdelt_cloud_tool_get`, then execute it through
-`gdelt_cloud_tool_call`. Its arguments are the flattened form published by that tool schema; do not
-guess from the REST JSON body.
+MCP: call `preview_monitor` directly. Its arguments are the flattened form published by that
+named tool's schema; do not guess from the REST JSON body. `get_tool_schema` and
+`get_parameter_options` provide free guidance if a parameter or choice is unclear.
 
-**Two execution wrappers, and picking the wrong one fails the call.** `gdelt_cloud_tool_call` is
-read-only; every tool that creates, updates, pauses, deletes or *sends* something runs through
-`gdelt_cloud_tool_write` instead. Passing a mutating tool to `gdelt_cloud_tool_call` is refused —
-it is not a soft warning. `preview_monitor` is deliberately a READ: it costs a Query Unit but
-creates nothing, so it belongs on `gdelt_cloud_tool_call`. Each entry in `gdelt_cloud_tool_list`
-names its own wrapper in `call_with`; read that rather than inferring from the verb.
+Read/write annotations identify side effects. `preview_monitor` is a metered read that creates
+nothing. Creation, updates, deletion and delivery tests require user authorization; a delivery
+test sends a real signed webhook to an external destination.
 
 Preview and create accept the same Monitor specification. Read the returned rows, not only the
 status and count. Confirm that geography, taxonomy, semantic topic, and entity coverage match what
@@ -168,9 +161,8 @@ Example REST body:
 
 ### 4. Create and retain operation-only secrets
 
-REST: `POST /api/v2/monitors`. MCP: inspect `create_monitor` with `gdelt_cloud_tool_get`, then
-pass that underlying tool name and its published arguments to **`gdelt_cloud_tool_write`** —
-creation changes state, so `gdelt_cloud_tool_call` refuses it.
+REST: `POST /api/v2/monitors`. MCP: call `create_monitor` with its published arguments after
+the user confirms the preview and stored settings. Creation changes workspace state.
 
 Creation requires an organization owner/admin and is subject to the plan's Monitor count, cadence,
 and webhook entitlement. The response returns the stored canonical Monitor. If webhook delivery is
@@ -208,14 +200,12 @@ PATCH `delivery.webhook_url` to `null` to remove webhook delivery. Set
 changing unrelated fields does not rotate it. Never log the secret or put it in a URL, source file,
 or example as a real value.
 
-The underlying MCP management tools split across the two wrappers. Reads —
-`list_monitors`, `get_monitor`, `list_monitor_runs`, `get_monitor_run` — run through
-`gdelt_cloud_tool_call`. Writes — `set_monitor_enabled`, `configure_monitor_delivery`,
-`test_monitor_delivery` (it sends a real signed webhook to an external destination),
-`update_monitor`, `run_monitor_now` and `delete_monitor` — run through `gdelt_cloud_tool_write`.
-Discover each with `gdelt_cloud_tool_get`, which names the correct wrapper in `call_with`. Confirm the stored subject,
-criteria, cadence, enabled state, and delivery health after mutation. Delete only when the user
-explicitly asks; pausing is the reversible choice.
+Call MCP management tools directly: `list_monitors`, `get_monitor`, `list_monitor_runs` and
+`get_monitor_run` read stored state. `set_monitor_enabled`, `configure_monitor_delivery`,
+`test_monitor_delivery`, `update_monitor`, `run_monitor_now` and `delete_monitor` have side effects.
+Use their live schemas and annotations; confirm an external delivery test before sending it.
+Confirm the stored subject, criteria, cadence, enabled state and delivery health after mutation.
+Delete only when the user explicitly asks; pausing is the reversible choice.
 
 REST equivalents:
 
@@ -229,8 +219,7 @@ POST   /api/v2/monitors/{id}/test-delivery
 
 ### 5. Inspect runs and replay complete results
 
-Use the underlying MCP tools `list_monitor_runs`, then `get_monitor_run`, through the same
-progressive get/call wrappers. REST equivalents:
+Call the named MCP tools `list_monitor_runs`, then `get_monitor_run`. REST equivalents:
 
 ```text
 GET /api/v2/monitors/{id}/runs

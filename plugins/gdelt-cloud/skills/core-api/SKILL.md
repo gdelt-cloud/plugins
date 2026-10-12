@@ -5,4 +5,4 @@ description: Choose the GDELT Cloud endpoint for Events, Stories, summaries, ent
 
 # Core Api
 
-Read the [shared news country research workflow](../../workflows/news-country-research/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use the local files even when connected to the existing Horizon server during the launch transition.
+Read the [shared news country research workflow](../../workflows/news-country-research/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use these named-tool workflows with the current GDELT Cloud MCP release. Inspect the connected schema for exact arguments.

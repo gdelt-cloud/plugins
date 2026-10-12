@@ -5,6 +5,6 @@ description: Preview, create, pause or inspect a hosted GDELT Cloud Monitor and 
 
 # Hosted Monitors
 
-Read the [shared situations monitors workflow](../../workflows/situations-monitors/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use the local files even when connected to the existing Horizon server during the launch transition.
+Read the [shared situations monitors workflow](../../workflows/situations-monitors/SKILL.md) before selecting tools. This is the versioned workflow bundle shipped with this plugin; use these named-tool workflows with the current GDELT Cloud MCP release. Inspect the connected schema for exact arguments.
 
 Load [specialist reference](references/details.md) only for deeper source-specific detail.

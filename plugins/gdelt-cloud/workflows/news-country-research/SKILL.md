@@ -1,22 +1,30 @@
 ---
 name: news-country-research
 description: Answer news, Story, Event and country questions with structured evidence and explicit coverage.
+metadata:
+  tool_exposure: named
 ---
 
 # News Country Research
 
 ## Country research
-Discover `gdelt_cloud` section `countries`. Use `get_countries` to identify available context and `get_country` for one country. Add `summarize_events` for counts/trends, or a bounded `search_events`/`search_stories` query for evidence. REST: `/api/v2/countries`, `/api/v2/countries/{iso3}`, `/api/v2/events/summary`, `/api/v2/events`, `/api/v2/stories`. Use the exact discovered date/filter names for each operation. Native macro series belong to `macro`; source-specific structural data must keep vintage, unit and attribution.
+Use the named country operations; optional `get_data_catalog(domain="gdelt_cloud", section="countries")` explains related choices. Use `get_countries` to identify available context and `get_country` for one country. Add `summarize_events` for counts/trends, or a bounded `search_events`/`search_stories` query for evidence. REST: `/api/v2/countries`, `/api/v2/countries/{iso3}`, `/api/v2/events/summary`, `/api/v2/events`, `/api/v2/stories`. Use the exact discovered date/filter names for each operation. Native macro series belong to `macro`; source-specific structural data must keep vintage, unit and attribution.
 
 ## News and narrative
 Use Events for incidents and analytical aggregation, Stories for clustered narratives, article endpoints for reporting. Begin with the smallest scope implied by the question. A headline overview rarely needs every source or a cross-domain sweep. Fetch known records directly when their schema is already understood.
 
 ```python
-gdelt_cloud_tool_call(tool_name="search_events", tool_arguments={"limit": 5})
-gdelt_cloud_tool_call(tool_name="search_stories", tool_arguments={"limit": 5})
-gdelt_cloud_tool_call(tool_name="get_countries", tool_arguments={})
+search_events(
+    country=["France"], country_match="location", start_date="2026-09-21",
+    end_date="2026-09-27", limit=5, include_images=True, include_entity_images=True)
+search_stories(
+    country=["France"], country_match="location", start_date="2026-09-21",
+    end_date="2026-09-27", limit=5, include_images=True, include_entity_images=True)
+get_countries(
+    country="France", basis="reporting", date_start="2026-09-21",
+    date_end="2026-09-27", include_event_metrics=True)
 ```
-These illustrate wrapper syntax; scope real requests to the user's geography, dates and question using discovered filters.
+These demonstrate one explicit closed-week scope; choose the user's actual country and interval rather than executing the example unchanged. The country reporting endpoint attributes Stories to every authoritative country association, so its Story context can be broader than a location-only Story evidence sample. State that distinction and read coverage before comparing counts. Optional metadata can clarify unfamiliar values; a familiar operation needs no discovery preflight.
 
 Present selected Events and Stories as linked GDELT Cloud records, with relevant returned metrics (magnitude, systemic importance, propagation potential and market sensitivity, plus evidence counts when useful; do not display coding confidence). Explain metric meaning without implying a calibrated probability of real-world impact. Add linked entities or facilities when a supported identity, ownership or geographic join helps answer the question; proximity alone is not impact. Use returned images when helpful (`include_images` where supported), up to three with attribution. Publisher links remain supporting reporting evidence. Report served/missing dates, applied filters and truncated lists. Aggregate totals cannot be reconstructed from the visible compact sample. Events are machine-coded, Stories cluster reporting, and source coverage is uneven; neither is an exhaustive census of reality. Category/subcategory and current metric definitions are authoritative, not raw CAMEO/Goldstein interpretation. Use `gdelt://codes/cameo-event` and `gdelt://codes/goldstein-scale` for the current interpretation.
 
@@ -41,6 +49,54 @@ For a reproducible regional/bbox Monitor, prefer a query subject using the docum
 
 
 A first pass normally needs one category summary per comparison scope, one focused subcategory drilldown and one evidence sample. Reuse each successful result and the first Monitor preview. Do not refetch identical summaries/Situations or shrink an already returned sample; use full response mode only when a specific missing field is needed. Report the result of a bounded Situation search as “no matches for this search,” not proof that no related Situation exists. Do not combine category averages into a global average unless the API provides each metric's non-null measurement count and all buckets; use the directly returned aggregate or keep the category comparison instead.
-Country context links the same canonical Facilities inventory and separate natural-resource statistics. Follow returned evidence URLs or discover `resource_statistics` via the resources group for production/reserves, source year and units. Facility counts and registry-unit counts differ; country mineral reserves are not per-facility reserves. Owner/parent news context is a separate relationship from events located near a site. Retain unlinked identities, missing geography and partial publication coverage.
+Country context links the same canonical Facilities inventory and separate natural-resource statistics. Follow returned evidence URLs or call `resource_statistics` for production/reserves, source year and units. Facility counts and registry-unit counts differ; country mineral reserves are not per-facility reserves. Owner/parent news context is a separate relationship from events located near a site. Retain unlinked identities, missing geography and partial publication coverage.
 
 Country `natural_resources` is a preview of at most 12 source observations. Its `meta.summary` describes the full filtered result before pagination; count facets count observations, not tonnes or reserves. Keep `section_availability` and null sections explicit. Resource reference years are independent of the requested news window. Follow the returned `api_url` for a deeper REST query, or use `resource_statistics` with country/region/continent and `include_summary=true`. Select source and scope from discovery; commodity and statistic suggestions are observed values, not closed allowlists. Compare quantities only with the same source, year, unit, statistic, statistic_detail, material_type and material_form, retaining qualifiers and native publisher fields. A missing numeric value is unknown, not zero. Preserve the returned cursor and exact filters when continuing; summaries cannot be inferred from the visible sample.
+
+## Playbook: Situation-led exposure brief
+
+Use when a user asks how an ongoing development changes a country, sector or supplier's exposure.
+Start with their decision and a closed UTC window; take a useful first pass before requesting
+optional sector or route refinements. For an ordinary brief, select at most three developments,
+two maintained Situations and two relevant sites; fewer supported matches are better than invented
+coverage. A request for GDELT Cloud Situations means product records, not newly coined groupings.
+
+1. Compare `summarize_events` over two identical location-scoped windows. A category rollup
+   or one targeted subcategory rollup answers a population question; semantic samples do not.
+   Keep the same taxonomy predicate and read both coverage receipts before calculating change.
+2. Use `search_situations` for maintained context and `get_situation` for a material match.
+   Cite its returned public URL and retained edition date, disclose its actual geography and
+   explain whether it extends beyond the brief's dates. Use the returned edition/membership
+   operations only when a historical snapshot or change in membership answers the question.
+   Do not silently substitute a country-filter miss with invented Situations or unrelated matches.
+3. Choose evidence Events that explain the decision, including relevant CAMEO+ records when
+   available. Present a small table: **linked Event | category → subcategory | magnitude |
+   systemic importance | propagation potential | market sensitivity**. Add one compact legend.
+   Magnitude is 0–10 within its category; the other scores are 0–1 rubrics, not probabilities.
+   Conflict values stay **not applicable**, missing CAMEO+ measurements **unknown**. Keep metric
+   version, non-null denominators and evidence assumptions when comparing aggregates; do not
+   produce a cross-category risk index. Omit coding confidence.
+4. Join a material Facility or Entity through returned identity/role evidence. Use country context
+   or `resource_statistics` for one structural observation that changes interpretation; retain
+   source, reference year, unit, material basis and estimate qualifiers. A dated capacity or
+   national-production observation is not current plant output, inventory or availability.
+5. Deliver the decision, selected evidence and limits together: observed reporting, measured or
+   operator-confirmed effects, and plausible transmission pathways are distinct. Use up to three
+   credited returned images if helpful, labeled representative unless incident provenance is
+   established. Finish with one useful refinement or an unsaved Monitor draft when requested.
+
+REST composition uses `/api/v2/events/summary`, `/api/v2/events`, `/api/v2/situations`, the
+returned Situation/edition links, `/api/v2/facilities` and `/api/v2/resources/statistics`. Inspect documented
+filters and continuation URLs instead of building public citations from identifiers. Publication
+history or source failures remain explicit and do not establish no activity. Never sum Situation
+membership into country totals: the scopes can overlap and the membership model differs.
+
+### Explain the advantage without overstating exclusivity
+
+Original news, registry and statistical facts can often be found on the web. GDELT Cloud adds a
+queryable, reusable Event taxonomy and four metrics, same-filter population comparisons with
+coverage receipts, maintained Situation membership/editions, resolved identities, canonical sites
+and dated source observations that can be composed into an application or Monitor. Plain search
+can be better at a narrow operator disclosure or regulator confirmation; use it as optional
+corroboration when that changes the decision. Do not claim that public source facts are exclusive,
+that a rubric proves a loss, or that a brief demonstrates exhaustive coverage.
