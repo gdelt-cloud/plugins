@@ -21,4 +21,10 @@ class PublicReleaseTests(unittest.TestCase):
                      for p in (DATA / folder).rglob('*.md') if old.search(p.read_text())]
         self.assertEqual(offenders, [])
 
+class DiscoveryGuidanceTests(unittest.TestCase):
+    def test_does_not_invent_schema_or_execution_discovery_tools(self):
+        files = [ROOT / 'README.md', *(DATA / 'skills').rglob('*.md'), *(DATA / 'workflows').rglob('*.md')]
+        unavailable = re.compile(r'\b(?:get_tool_schema|search_tools)\b')
+        self.assertEqual([str(p.relative_to(ROOT)) for p in files if unavailable.search(p.read_text())], [])
+
 if __name__ == '__main__': unittest.main()

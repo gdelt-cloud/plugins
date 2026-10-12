@@ -116,8 +116,8 @@ POST /api/v2/monitors/preview
 ```
 
 MCP: call `preview_monitor` directly. Its arguments are the flattened form published by that
-named tool's schema; do not guess from the REST JSON body. `get_tool_schema` and
-`get_parameter_options` provide free guidance if a parameter or choice is unclear.
+named tool's advertised schema; do not guess from the REST JSON body.
+`get_parameter_options` provides free accepted choices when a categorical value is unclear.
 
 Read/write annotations identify side effects. `preview_monitor` is a metered read that creates
 nothing. Creation, updates, deletion and delivery tests require user authorization; a delivery

@@ -147,8 +147,8 @@ uses a bounded submission-time snapshot; it is not a live sync of this repositor
 
 Read [MCP workflows](plugins/gdelt-cloud/skills/getting-started/references/mcp-workflows.md)
 for all 14 data domains, optional discovery, writes, errors and text-only fallback. Call named
-operations directly using their advertised schemas. Free `get_data_catalog`, `search_tools`,
-`get_tool_schema` and `get_parameter_options` provide detail when needed. Tool annotations
+operations directly using their advertised schemas. Free `get_data_catalog`,
+`get_event_taxonomy` and `get_parameter_options` provide orientation and unfamiliar accepted choices. Tool annotations
 distinguish reads from mutations; confirm Monitor/Situation changes before execution. The
 docs-only product exposes no data-server writes.
 The same connected tool may be gated by account/workspace entitlement; visibility is not access.
@@ -192,8 +192,8 @@ a Monitor webhook receiver, and end-to-end Monitor workflows:
 
 ## Links
 
-The data plugin's 0.9.0 release includes canonical workflow bundle
-`2026.10.11.named.3`, exported from the monorepo MCP package. Eight existing skill names route
+The data plugin's 0.9.1 release includes canonical workflow bundle
+`2026.10.12.named.1`, exported from the monorepo MCP package. Eight existing skill names route
 to five packaged `workflows/` files. `python3 scripts/validate.py` checks their SHA-256 manifest,
 client manifests and packaged references. Client setup stays separate from shared workflows.
 Update or reinstall an existing coding plugin and restart the session to receive the release.

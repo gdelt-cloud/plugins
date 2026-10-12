@@ -20,7 +20,9 @@ Cite returned evidence and product links; distinguish saved configuration from p
 
 ## Query Monitor: the same scope in MCP and REST
 
-This draft watches new Transport Disruption Events occurring in France. The current taxonomy pair is Infrastructure / `IN02`; use optional taxonomy lookup if unfamiliar. It includes aviation and shipping as well as road and rail. Run Preview to inspect evidence and coverage; execute the creation example only after the user authorizes saving this scope and email delivery.
+This draft watches newly recorded Transport Disruption Events located in France. The current taxonomy pair is Infrastructure / `IN02`; use optional taxonomy lookup if unfamiliar. It includes aviation and shipping as well as road and rail. Run Preview to inspect evidence and coverage; execute the creation example only after the user authorizes saving this scope and email delivery.
+
+Check the direction of the preview evidence against the user's intent. A disruption category can contain reporting about restoration or infrastructure improvements; its label alone does not establish a newly beginning outage. `new_matches` means newly committed matching records. Keep the requested category/subcategory unchanged across account retries, and disclose a broad draft that cannot express interruption-only intent. Offer a supported refinement or human triage rather than promising a direction filter the API does not provide.
 
 The named MCP Preview uses flattened arguments:
 
