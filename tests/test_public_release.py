@@ -17,8 +17,8 @@ class PublicReleaseTests(unittest.TestCase):
         manifest = json.loads((DATA / 'workflows/manifest.json').read_text())
         self.assertEqual(manifest['tool_exposure'], 'named')
         old = re.compile(r'\b\w+_tool_(?:list|get|call|write)\b')
-        offenders = [str(p.relative_to(ROOT)) for folder in ('skills', 'workflows')
-                     for p in (DATA / folder).rglob('*.md') if old.search(p.read_text())]
+        offenders = [str(p.relative_to(ROOT)) for directory in (DATA / 'skills', DATA / 'workflows', ROOT / 'plugins/gdelt-cloud-docs/skills')
+                     for p in directory.rglob('*.md') if old.search(p.read_text())]
         self.assertEqual(offenders, [])
 
 class DiscoveryGuidanceTests(unittest.TestCase):

@@ -20,11 +20,14 @@ access only. A live query requires a separate authenticated data connector or a 
 REST client. If only some contract details are documented, state the uncertainty rather than
 inventing fields, response counts or a successful deployment.
 
-For MCP implementations, inspect the data server's live `_tool_get` schema when connected;
-REST parameters and JSON bodies can differ from MCP arguments. Progressive execution uses
-`<category>_tool_call(tool_name="...", tool_arguments={...})`, and authorized workspace writes
-use the declared write wrapper. Discover the operation first; never invent an MCP equivalent
-for an endpoint that has none.
+For MCP implementations, inspect the connected data server's named tool descriptors;
+REST parameters and JSON bodies can differ from MCP arguments. Call the exact advertised
+operation with its typed arguments. Optional `get_data_catalog`, `get_parameter_options`
+and `get_event_taxonomy` provide local orientation and categorical guidance when needed.
+Do not require a discovery call before a familiar operation. Workspace mutations require
+explicit authorization; a Monitor preview does not save or send. The legacy wrapper profile
+is not the current public connection. Never invent an MCP equivalent for an endpoint that
+has none.
 
 Use a source link next to the answer so a builder can verify the contract. If documentation is
 contradictory, report both specifics. Prepare feedback if useful; do not send a message to the
