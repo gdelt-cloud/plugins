@@ -222,9 +222,11 @@ POST   /api/v2/monitors/{id}/test-delivery
 Call the named MCP tools `list_monitor_runs`, then `get_monitor_run`. REST equivalents:
 
 ```text
-GET /api/v2/monitors/{id}/runs
-GET /api/v2/monitors/{id}/runs/{run_id}
+GET /api/v2/monitors/{id}/runs?view=summary
+GET /api/v2/monitors/{id}/runs/{run_id}?view=summary
 ```
+
+Page every match with `GET /api/v2/monitors/{id}/runs/{run_id}/matches`. The full run shape (`results`, `matched_items`, `evaluation_json`) is deprecated and is removed on or after 2026-12-03.
 
 The detailed run adds:
 
